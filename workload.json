@@ -1,0 +1,6 @@
+[{"WorkName":"work1","level":1,"C":5,"T":10},
+{"WorkName":"work2","level":1,"C":10,"T":10},
+{"WorkName":"work3","level":2,"C":6,"T":20},
+{"WorkName":"work4","level":2,"C":5,"T":15},
+{"WorkName":"work5","level":3,"C":10,"T":10}
+]

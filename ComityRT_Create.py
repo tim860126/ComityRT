@@ -2,6 +2,8 @@ import configparser
 import inquirer
 import os
 import copy
+import subprocess
+import prettytable as pt
 #config = configparser.ConfigParser()
 
 
@@ -96,21 +98,27 @@ def Choose_edit_config(config,AList):
   option=Choose_config_option(AList)
   if option=="ComityRT":
     key=Choose_config_Mkey()
-  #elif option=="Back":
-  #  Edit_config()
+  elif option=="Back":
+    Edit_config()
+    return "Back"
   else:
     key=Choose_config_Ckey()
 
   if key=="Back":
     Choose_edit_config(config,AList)
+    return "Back"
+  else:
+    return "edit"
   
   
 def Edit_config():
   config = configparser.ConfigParser()
   config_name=Load_config()
-  print(config_name)
+  #print(config_name)
   if config_name==False:
     Edit_config()
+  elif config_name=="Back":
+    pass
   else:
     path="./config/"+str(config_name)
     config.read(path)
@@ -118,12 +126,19 @@ def Edit_config():
     global key
     AList=config.sections()
     AList.append("Back")
-    Choose_edit_config(config,AList)
-    print(option+" "+key)
+    msg=Choose_edit_config(config,AList)
+    if msg=="edit":
+      print(option+" "+key)
+    elif msg=="Back":
+      print("Back")
   
 def Bulid_system():
   config_name=Load_config()
-
+  for i in range(len(Cirityical_Name)):
+    CreateCMD(Cirityical_Name[i],Ciritical_container[i]['CPU_Use'])
+def CreateCMD(Name,CPU_U):
+  #print(Name+" "+CPU_U)
+  subprocess.run(["sh","CreateDocker.sh",CPU_U,Name])
 def Load_config():
   config = configparser.ConfigParser()
   choices=[]
@@ -134,7 +149,7 @@ def Load_config():
         choices.append(fname)
   else:
     print("config folder not found!")
-  #choices.append("Back") 
+  choices.append("Back") 
   questions = [
   inquirer.List('action',
                 message="Choose An configuration file",
@@ -145,63 +160,65 @@ def Load_config():
   
   cfgN=answers['action'] 
 
-  ans = ContinueQue()
-
-  if ans['continue']==True:
-  #if answers['action']=="Back":
-  #  Choose_List()
-  #  pass  
-  
-    configpath='./config/'+cfgN
-  
-    config.read(configpath)
-  
-    global Cirityical_Name
-    global CPU_Use
-    global Ciritical_Level_Count
-    global Pirority_algorithm
-    global CPU_Limit
-    global Workload_Name
-    global Execution_Level_Mode
-    global Priority_Mode
-    global Scheduleability_analysis
-
-    Cirityical_Name = config.get('ComityRT' , 'Cirityical_Name').split()
-
-    CPU_Use = config.get('ComityRT' , 'CPU_Use').split()
-
-    Ciritical_Level_Count=config['ComityRT']['Ciritical_Level_Count']
-
-    Pirority_algorithm =config['ComityRT']['Pirority_algorithm']
-
-    CPU_Limit=config['ComityRT']['CPU_Limit']
-
-    Workload_Name = config['ComityRT']['Workload_Name']
-
-    Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
-
-    Priority_Mode = config['ComityRT']['Priority_Mode']
-
-    Scheduleability_analysis = config['ComityRT']['Scheduleability_analysis']
-  
-    fname=answers['action']
-
-    #讀取關鍵層級容器的參數
-    Level=[]
-    for i in Cirityical_Name:
-      #Level=config[str(i)]
-      Ciritical_container.append(config[str(i)])
-      #print(config[str(i)][str(j)])
-  
-    View_parameters(fname)
-
-  
-    #print(Ciritical_container['level1']['CPU_Limit'])
- 
-    return fname
-   
+  if answers['action']=="Back":
+      Choose_List()
+      return "Back"
   else:
-    return ans['continue']
+    #View_parameters(cfgN)
+    ans = ContinueQue()
+  
+    if ans['continue']==True:
+  
+      configpath='./config/'+cfgN
+  
+      config.read(configpath)
+  
+      global Cirityical_Name
+      global CPU_Use
+      global Ciritical_Level_Count
+      global Pirority_algorithm
+      global CPU_Limit
+      global Workload_Name
+      global Execution_Level_Mode
+      global Priority_Mode
+      global Scheduleability_analysis
+
+      Cirityical_Name = config.get('ComityRT' , 'Cirityical_Name').split()
+
+      CPU_Use = config.get('ComityRT' , 'CPU_Use').split()
+
+      Ciritical_Level_Count=config['ComityRT']['Ciritical_Level_Count']
+
+      Pirority_algorithm =config['ComityRT']['Pirority_algorithm']
+
+      CPU_Limit=config['ComityRT']['CPU_Limit']
+
+      Workload_Name = config['ComityRT']['Workload_Name']
+
+      Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
+
+      Priority_Mode = config['ComityRT']['Priority_Mode']
+
+      Scheduleability_analysis = config['ComityRT']['Scheduleability_analysis']
+  
+      fname=answers['action']
+
+      #讀取關鍵層級容器的參數
+      Level=[]
+      for i in Cirityical_Name:
+        #Level=config[str(i)]
+        Ciritical_container.append(config[str(i)])
+        #print(config[str(i)][str(j)])
+  
+      View_parameters(fname)
+
+  
+      #print(Ciritical_container['level1']['CPU_Limit'])
+ 
+      return fname
+   
+    else:
+      return ans['continue']
 
 def ContinueQue():
   questions = [
@@ -215,27 +232,59 @@ def ComityRT_Status():
   print('he')  
 
 def View_parameters(fname):
+  os.system("clear")
   Temp=""
-  print('\n================ '+fname+' =================\n')
+  tb1 = pt.PrettyTable()
+  tb1.field_names = ["Parameter",fname]
+  tb1.add_row(["Ciritical_Level_Count",Ciritical_Level_Count])
+  tb1.add_row(["Cirityical_Name",Cirityical_Name])
+  tb1.add_row(["Pirority_algorithm",Pirority_algorithm])
+  tb1.add_row(["CPU_Limit",CPU_Limit])
+  tb1.add_row(["CPU_Use",CPU_Use])
+  tb1.add_row(["Workload_Name",Workload_Name])
+  tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
+  tb1.add_row(["Priority_Mode",Priority_Mode])
+  tb1.add_row(["Scheduleability_analysis",Scheduleability_analysis])
+  tb1.align="l"
+  print(tb1) 
 
-  print('Ciritical_Level_Count =',Ciritical_Level_Count)
-  print('\nCirityical_Name =',Cirityical_Name)
-  print('\nPirority_algorithm =',Pirority_algorithm)
-  print('\nCPU_Limit =',CPU_Limit)
-  print('\nCPU_Use =',CPU_Use);
-  print('\nWorkload_Name =',Workload_Name)
-  print('\nExecution_Level_Mode =',Execution_Level_Mode)
-  print('\nPriority_Mode =',Priority_Mode)
-  print('\nScheduleability_analysis =',Scheduleability_analysis)
+  #print('\n================ '+fname+' =================\n')
+
+  #print('Ciritical_Level_Count =',Ciritical_Level_Count)
+  #print('\nCirityical_Name =',Cirityical_Name)
+  #print('\nPirority_algorithm =',Pirority_algorithm)
+  #print('\nCPU_Limit =',CPU_Limit)
+  #print('\nCPU_Use =',CPU_Use);
+  #print('\nWorkload_Name =',Workload_Name)
+  #print('\nExecution_Level_Mode =',Execution_Level_Mode)
+  #print('\nPriority_Mode =',Priority_Mode)
+  #print('\nScheduleability_analysis =',Scheduleability_analysis)
   Temp=copy.deepcopy(Config_ConList)
   Temp.pop()
+  tb1 = pt.PrettyTable()
+  tb1.field_names = ["Container",
+                       "CPU_Limit",
+                       "CPU_Use",
+                       "CPU_Weights",
+                       "Memory_Limit"
+                     ]
+
   for i in range(len(Cirityical_Name)):
-    print('╔════════════╗')
-    print('║{0:12}║'.format(str(Cirityical_Name[i])))
-    print('╚════════════╝')
+    Temp2=[]
+    Temp2.append(Cirityical_Name[i])
     for j in Temp:
-      print('\n'+str(j)+' ='+Ciritical_container[i][j])
-    print('\n')
+      Temp2.append(Ciritical_container[i][j])  
+    #print(Temp2)
+    tb1.add_row(Temp2)
+  print(tb1) 
+ 
+  #for i in range(len(Cirityical_Name)):
+  #  print('╔════════════╗')
+  #  print('║{0:12}║'.format(str(Cirityical_Name[i]).center(12)))
+  #  print('╚════════════╝')
+  #  for j in Temp:
+  #    print('\n'+str(j)+' ='+Ciritical_container[i][j])
+  #  print('\n')
 
   print('\n===============================================\n')
 
