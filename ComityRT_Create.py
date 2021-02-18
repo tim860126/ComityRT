@@ -4,6 +4,9 @@ import os
 import copy
 import subprocess
 import prettytable as pt
+import time
+import threading
+from progressbar import *
 #config = configparser.ConfigParser()
 
 
@@ -52,13 +55,23 @@ def Choose_List():
   if answers['action']=="(1)Build system through configuration file":
     Bulid_system()
   elif answers['action']=="(2)Edit system configuration file":
-    Edit_config()
+    Edit_config("","")
   elif answers['action']=="(3)System Start":
     print("3")
   elif answers['action']=="(4)System Stop":
-    print("4")
+    Stop2Rm()
   elif answers['action']=="(5)View ComityRT Log":
     print("5")
+
+def Choose_config(choices):
+  questions = [
+  inquirer.List('action',
+                message="Choose An configuration file",
+                choices=choices,
+            ),
+  ]
+  answers = inquirer.prompt(questions)
+  return answers['action']
 
 def Choose_config_option(AList):
   questions = [
@@ -91,7 +104,7 @@ def Choose_config_Ckey():
   answers = inquirer.prompt(questions)
   return answers['action']
 
-def Choose_edit_config(config,AList):
+def Choose_edit_config(AList):
   global option
   global key
 
@@ -99,73 +112,119 @@ def Choose_edit_config(config,AList):
   if option=="ComityRT":
     key=Choose_config_Mkey()
   elif option=="Back":
-    Edit_config()
+    Edit_config("",AList)
     return "Back"
   else:
     key=Choose_config_Ckey()
-
+  
   if key=="Back":
-    Choose_edit_config(config,AList)
-    return "Back"
+    Edit_config("Backop",AList)
+    return "Backop"
   else:
     return "edit"
   
   
-def Edit_config():
-  config = configparser.ConfigParser()
-  config_name=Load_config()
-  #print(config_name)
-  if config_name==False:
-    Edit_config()
-  elif config_name=="Back":
-    pass
+def Edit_config(msg,AList):
+  global option
+  global key
+  if msg=="Backop":
+    msg=Choose_edit_config(AList)
   else:
-    path="./config/"+str(config_name)
-    config.read(path)
-    global option
-    global key
-    AList=config.sections()
-    AList.append("Back")
-    msg=Choose_edit_config(config,AList)
-    if msg=="edit":
-      print(option+" "+key)
-    elif msg=="Back":
-      print("Back")
+    config = configparser.ConfigParser()
+    config_name=Load_config()
+    if config_name==False:
+      Edit_config("","")
+    elif config_name=="Back":
+      pass
+    else:
+      path="./config/"+str(config_name)
+      config.read(path)
+      AList=config.sections()
+      AList.append("Back")
+      msg=Choose_edit_config(AList)
+  if msg=="edit":
+    print(option+" "+key)
+  elif msg=="Back":
+    print("Back")
+  elif msg=="Backop":
+    print("Backop")
+  #print(AList)
   
 def Bulid_system():
   config_name=Load_config()
   for i in range(len(Cirityical_Name)):
+    progress = ProgressBar().start()
+    t1=threading.Thread(target=dosomework,args=(progress,))
+    t1.start()
+    time.sleep(2)
+    print("\n")
+    print(Cirityical_Name[i]+" Complete the build!")
+
     CreateCMD(Cirityical_Name[i],Ciritical_container[i]['CPU_Use'])
+
+def Stop2Rm():
+  config = configparser.ConfigParser()
+  choices=[]
+  choices=Found_config()
+  choices.append("Back")
+  cfgN=Choose_config(choices)
+  if cfgN=="Back":
+      Choose_List()
+      return "Back"
+  else:
+     print(cfgN)
+
+def dosomework(progress):
+  for n in range(1, 80):
+    progress.update(int(n/(80-1)*100))
+    time.sleep(0.01)
+
 def CreateCMD(Name,CPU_U):
   #print(Name+" "+CPU_U)
   subprocess.run(["sh","CreateDocker.sh",CPU_U,Name])
-def Load_config():
-  config = configparser.ConfigParser()
+
+def Found_config():
   choices=[]
   path="./config"
   if os.path.isdir(path):
     for fname in os.listdir(path):
       if fname.endswith(".ini"):
         choices.append(fname)
+    return choices
   else:
     print("config folder not found!")
-  choices.append("Back") 
-  questions = [
-  inquirer.List('action',
-                message="Choose An configuration file",
-                choices=choices,
-            ),
-  ]
-  answers = inquirer.prompt(questions)
-  
-  cfgN=answers['action'] 
+    return False
 
-  if answers['action']=="Back":
+def Load_config():
+  config = configparser.ConfigParser()
+  choices=[]
+  #path="./config"
+  #if os.path.isdir(path):
+  #  for fname in os.listdir(path):
+  #    if fname.endswith(".ini"):
+  #      choices.append(fname)
+  #else:
+  #  print("config folder not found!")
+  
+  choices=Found_config()
+  choices.append("Back")
+  
+  #questions = [
+  #inquirer.List('action',
+  #              message="Choose An configuration file",
+  #              choices=choices,
+  #          ),
+  #]
+  #answers = inquirer.prompt(questions)
+  
+  cfgN=Choose_config(choices)
+
+  if cfgN=="Back":
       Choose_List()
       return "Back"
   else:
     #View_parameters(cfgN)
-    ans = ContinueQue()
+    ans = ContinueQue("Choose this configuration file?")
   
     if ans['continue']==True:
   
@@ -201,7 +260,7 @@ def Load_config():
 
       Scheduleability_analysis = config['ComityRT']['Scheduleability_analysis']
   
-      fname=answers['action']
+      fname=cfgN
 
       #讀取關鍵層級容器的參數
       Level=[]
@@ -220,10 +279,10 @@ def Load_config():
     else:
       return ans['continue']
 
-def ContinueQue():
+def ContinueQue(msg):
   questions = [
     inquirer.Confirm('continue',
-                  message="Choose this configuration file?"),
+                  message=msg),
   ]
   answers = inquirer.prompt(questions)
   return answers
