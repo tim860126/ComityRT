@@ -10,13 +10,13 @@ from progressbar import *
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
 
 Config_ConList=["Level_MaxNum_Cores_Limit","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Back"]
 
 Criticality_Name =""
 
-System_MaxNum_Limit=""
+System_MaxNum_Cores_Limit=""
 
 System_Use_Cores =""
 
@@ -244,7 +244,7 @@ def Load_config():
       global System_Use_Cores
       global num_Criticality_Level
       global Pirority_assignment_method
-      global System_MaxNum_Limit
+      global System_MaxNum_Cores_Limit
       global Workload_Name
       global Execution_Level_Mode
       global Priority_Mode
@@ -261,7 +261,7 @@ def Load_config():
 
       Pirority_assignment_method =config['ComityRT']['Pirority_assignment_method']
 
-      System_MaxNum_Limit=config['ComityRT']['System_MaxNum_Limit']
+      System_MaxNum_Cores_Limit=config['ComityRT']['System_MaxNum_Cores_Limit']
 
       Workload_Name = config['ComityRT']['Workload_Name']
 
@@ -309,7 +309,7 @@ def View_parameters(fname):
   tb1.add_row(["num_Criticality_Level",num_Criticality_Level])
   #tb1.add_row(["Criticality_Name",Criticality_Name])
   tb1.add_row(["Pirority_assignment_method",Pirority_assignment_method])
-  tb1.add_row(["System_MaxNum_Limit",System_MaxNum_Limit])
+  tb1.add_row(["System_MaxNum_Cores_Limit",System_MaxNum_Cores_Limit])
   tb1.add_row(["System_Use_Cores",System_Use_Cores])
   tb1.add_row(["Workload_Name",Workload_Name])
   tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
