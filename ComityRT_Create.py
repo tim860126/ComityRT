@@ -10,19 +10,19 @@ from progressbar import *
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","CPU_Use","Cirityicality_Level_Count","Pirority_algorithm","CPU_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","System_Use_Cores","num_Criticality_Level","Pirority_assignment_method","System_MaxNum_Cores","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
 
-Config_ConList=["CPU_Limit","CPU_Use","CPU_Weights","Memory_Limit","Back"]
+Config_ConList=["Level_MaxNum_Cores","Use_Cores","Cores_Weights","Memory_Limit","Back"]
 
 Criticality_Name =""
 
-CPU_Use =""
+System_Use_Cores =""
 
-Ciritical_Level_Count =""
+num_Criticality_Level =""
 
-Pirority_algorithm =""
+Pirority_assignment_method =""
 
-CPU_Limit=""
+System_MaxNum_Cores=""
 
 Workload_Name =""
 
@@ -241,10 +241,10 @@ def Load_config():
   
       config.read(configpath)
       global Criticality_Name
-      global CPU_Use
-      global Ciritical_Level_Count
-      global Pirority_algorithm
-      global CPU_Limit
+      global System_Use_Cores
+      global num_Criticality_Level
+      global Pirority_assignment_method
+      global System_MaxNum_Cores
       global Workload_Name
       global Execution_Level_Mode
       global Priority_Mode
@@ -255,13 +255,13 @@ def Load_config():
       
       Criticality_Name.remove("ComityRT")
      
-      CPU_Use = config.get('ComityRT' , 'CPU_Use').split()
+      System_Use_Cores = config.get('ComityRT' , 'System_Use_Cores').split()
 
-      Ciritical_Level_Count=config['ComityRT']['Ciritical_Level_Count']
+      num_Criticality_Level=config['ComityRT']['num_Criticality_Level']
 
-      Pirority_algorithm =config['ComityRT']['Pirority_algorithm']
+      Pirority_assignment_method =config['ComityRT']['Pirority_assignment_method']
 
-      CPU_Limit=config['ComityRT']['CPU_Limit']
+      System_MaxNum_Cores=config['ComityRT']['System_MaxNum_Cores']
 
       Workload_Name = config['ComityRT']['Workload_Name']
 
@@ -306,11 +306,11 @@ def View_parameters(fname):
   Temp=""
   tb1 = pt.PrettyTable()
   tb1.field_names = ["Parameter",fname]
-  tb1.add_row(["Ciritical_Level_Count",Ciritical_Level_Count])
+  tb1.add_row(["num_Criticality_Level",num_Criticality_Level])
   #tb1.add_row(["Criticality_Name",Criticality_Name])
-  tb1.add_row(["Pirority_algorithm",Pirority_algorithm])
-  tb1.add_row(["CPU_Limit",CPU_Limit])
-  tb1.add_row(["CPU_Use",CPU_Use])
+  tb1.add_row(["Pirority_assignment_method",Pirority_assignment_method])
+  tb1.add_row(["System_MaxNum_Cores",System_MaxNum_Cores])
+  tb1.add_row(["System_Use_Cores",System_Use_Cores])
   tb1.add_row(["Workload_Name",Workload_Name])
   tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
   tb1.add_row(["Priority_Mode",Priority_Mode])
@@ -320,9 +320,9 @@ def View_parameters(fname):
 
   #print('\n================ '+fname+' =================\n')
 
-  #print('Ciritical_Level_Count =',Ciritical_Level_Count)
+  #print('num_Criticality_Level =',num_Criticality_Level)
   #print('\nCriticality_Name =',Criticality_Name)
-  #print('\nPirority_algorithm =',Pirority_algorithm)
+  #print('\nPirority_assignment_method =',Pirority_assignment_method)
   #print('\nCPU_Limit =',CPU_Limit)
   #print('\nCPU_Use =',CPU_Use);
   #print('\nWorkload_Name =',Workload_Name)
@@ -332,10 +332,11 @@ def View_parameters(fname):
   Temp=copy.deepcopy(Config_ConList)
   Temp.pop()
   tb1 = pt.PrettyTable()
-  tb1.field_names = ["Container",
-                       "CPU_Limit",
-                       "CPU_Use",
-                       "CPU_Weights",
+  
+  tb1.field_names = ["Criticality_Level",
+                       "Level_MaxNum_Cores",
+                       "Use_Cores",
+                       "Cores_Weights",
                        "Memory_Limit"
                      ]
 
