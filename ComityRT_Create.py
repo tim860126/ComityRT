@@ -10,9 +10,9 @@ from progressbar import *
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","System_Use_Cores","num_Criticality_Level","Pirority_assignment_method","System_MaxNum_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
 
-Config_ConList=["Level_MaxNum_Cores","Use_Cores","Cores_Weights","Memory_Limit","Back"]
+Config_ConList=["Level_MaxNum_Cores_Limit","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Back"]
 
 Criticality_Name =""
 
