@@ -10,11 +10,11 @@ from progressbar import *
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Cirityical_Name","CPU_Use","Ciritical_Level_Count","Pirority_algorithm","CPU_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","CPU_Use","Cirityicality_Level_Count","Pirority_algorithm","CPU_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
 
 Config_ConList=["CPU_Limit","CPU_Use","CPU_Weights","Memory_Limit","Back"]
 
-Cirityical_Name =""
+Criticality_Name =""
 
 CPU_Use =""
 
@@ -152,15 +152,15 @@ def Edit_config(msg,AList):
   
 def Bulid_system():
   config_name=Load_config()
-  for i in range(len(Cirityical_Name)):
+  for i in range(len(Criticality_Name)):
     progress = ProgressBar().start()
     t1=threading.Thread(target=dosomework,args=(progress,))
     t1.start()
     time.sleep(2)
     print("\n")
-    print(Cirityical_Name[i]+" Complete the build!")
+    print(Criticality_Name[i]+" Complete the build!")
 
-    CreateCMD(Cirityical_Name[i],Ciritical_container[i]['CPU_Use'])
+    CreateCMD(Criticality_Name[i],Ciritical_container[i]['CPU_Use'])
 
 def Stop2Rm():
   config = configparser.ConfigParser()
@@ -172,8 +172,17 @@ def Stop2Rm():
       Choose_List()
       return "Back"
   else:
-     print(cfgN)
-
+     ans=ContinueQue("Are you sure you want to stop the system?")
+     path="./config/"+str(cfgN)
+     config.read(path)
+     AList=config.sections()
+     AList.remove("ComityRT")
+     for Lname in AList:
+       print(Lname)
+       aa=subprocess.run(["sh","CheckDocker.sh",Lname])
+       print(aa)
+       #subprocess.run(["sh","Stop2RmDocker.sh",Lname])
+     #print(AList)
 def dosomework(progress):
   for n in range(1, 80):
     progress.update(int(n/(80-1)*100))
@@ -231,8 +240,7 @@ def Load_config():
       configpath='./config/'+cfgN
   
       config.read(configpath)
-  
-      global Cirityical_Name
+      global Criticality_Name
       global CPU_Use
       global Ciritical_Level_Count
       global Pirority_algorithm
@@ -242,8 +250,11 @@ def Load_config():
       global Priority_Mode
       global Scheduleability_analysis
 
-      Cirityical_Name = config.get('ComityRT' , 'Cirityical_Name').split()
-
+      #Criticality_Name = config.get('ComityRT' , 'Criticality_Name').split()
+      Criticality_Name = config.sections()
+      
+      Criticality_Name.remove("ComityRT")
+     
       CPU_Use = config.get('ComityRT' , 'CPU_Use').split()
 
       Ciritical_Level_Count=config['ComityRT']['Ciritical_Level_Count']
@@ -264,7 +275,7 @@ def Load_config():
 
       #讀取關鍵層級容器的參數
       Level=[]
-      for i in Cirityical_Name:
+      for i in Criticality_Name:
         #Level=config[str(i)]
         Ciritical_container.append(config[str(i)])
         #print(config[str(i)][str(j)])
@@ -296,7 +307,7 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
   tb1.field_names = ["Parameter",fname]
   tb1.add_row(["Ciritical_Level_Count",Ciritical_Level_Count])
-  tb1.add_row(["Cirityical_Name",Cirityical_Name])
+  #tb1.add_row(["Criticality_Name",Criticality_Name])
   tb1.add_row(["Pirority_algorithm",Pirority_algorithm])
   tb1.add_row(["CPU_Limit",CPU_Limit])
   tb1.add_row(["CPU_Use",CPU_Use])
@@ -310,7 +321,7 @@ def View_parameters(fname):
   #print('\n================ '+fname+' =================\n')
 
   #print('Ciritical_Level_Count =',Ciritical_Level_Count)
-  #print('\nCirityical_Name =',Cirityical_Name)
+  #print('\nCriticality_Name =',Criticality_Name)
   #print('\nPirority_algorithm =',Pirority_algorithm)
   #print('\nCPU_Limit =',CPU_Limit)
   #print('\nCPU_Use =',CPU_Use);
@@ -328,18 +339,18 @@ def View_parameters(fname):
                        "Memory_Limit"
                      ]
 
-  for i in range(len(Cirityical_Name)):
+  for i in range(len(Criticality_Name)):
     Temp2=[]
-    Temp2.append(Cirityical_Name[i])
+    Temp2.append(Criticality_Name[i])
     for j in Temp:
       Temp2.append(Ciritical_container[i][j])  
     #print(Temp2)
     tb1.add_row(Temp2)
   print(tb1) 
  
-  #for i in range(len(Cirityical_Name)):
+  #for i in range(len(Criticality_Name)):
   #  print('╔════════════╗')
-  #  print('║{0:12}║'.format(str(Cirityical_Name[i]).center(12)))
+  #  print('║{0:12}║'.format(str(Criticality_Name[i]).center(12)))
   #  print('╚════════════╝')
   #  for j in Temp:
   #    print('\n'+str(j)+' ='+Ciritical_container[i][j])
