@@ -37,10 +37,43 @@ Ciritical_container=[]
 key=""
 option=""
 
+def Show_System_Status():
+  config = configparser.ConfigParser()
+  config.read('System.ini')
+  sysname=config.sections()
+  tb1 = pt.PrettyTable()
+  tb1.field_names = ["System","Status"] 
+  
+  for sname in sysname:
+    config = configparser.ConfigParser()
+    config.read('./config/'+sname+'.ini')
+    Criti_Name = config.sections()
+    Criti_Name.remove("ComityRT")
+    sysinfo="" 
+    syserror=""
+    for cname in Criti_Name:
+      status=subprocess.check_output(["sh","CheckDocker.sh",cname])   
+      
+      stauts=status.decode('utf-8').split("\n")[0]
+
+      if stauts=="false":
+        sysinfo=sysinfo+" "+cname+":Error "
+        syserror="true"
+    
+    if syserror!="true":
+      sysinfo="System Running!"     
+    tb1.add_row([sname,sysinfo])
+  
+
+  #tb1.align="l"
+  print(tb1)
+
 def Show_Welcom():
   print('\n================ ComityRT-Control =================\n')
 	
-  print('Docker Container Status')
+  print('Running System Status')
+
+  Show_System_Status()
 
   print('\n===================================================\n')
 
@@ -151,21 +184,31 @@ def Edit_config(msg,AList):
   #print(AList)
   
 def Bulid_system():
+  config = configparser.ConfigParser() 
   config_name=Load_config()
+  config.read("System.ini")
+  sysname=config_name[:-4]
+  
+  if not config.has_section(sysname):
+    config.add_section(sysname)
+    config.write(open('System.ini', "w"))
+  
   for i in range(len(Criticality_Name)):
+    CreateCMD(Criticality_Name[i],Ciritical_container[i]['Level_Use_Cores'])
     progress = ProgressBar().start()
     t1=threading.Thread(target=dosomework,args=(progress,))
     t1.start()
     time.sleep(2)
     print("\n")
     print(Criticality_Name[i]+" Complete the build!")
-
-    CreateCMD(Criticality_Name[i],Ciritical_container[i]['CPU_Use'])
+    #CreateCMD(Criticality_Name[i],Ciritical_container[i]['Level_Use_Cores'])
 
 def Stop2Rm():
   config = configparser.ConfigParser()
+  sysconfig =configparser.ConfigParser()
+  sysconfig.read("System.ini") 
   choices=[]
-  choices=Found_config()
+  choices=sysconfig.sections()
   choices.append("Back")
   cfgN=Choose_config(choices)
   if cfgN=="Back":
@@ -173,15 +216,18 @@ def Stop2Rm():
       return "Back"
   else:
      ans=ContinueQue("Are you sure you want to stop the system?")
-     path="./config/"+str(cfgN)
+     path="./config/"+str(cfgN)+".ini"
      config.read(path)
      AList=config.sections()
      AList.remove("ComityRT")
      for Lname in AList:
-       print(Lname)
-       aa=subprocess.run(["sh","CheckDocker.sh",Lname])
+       #print(Lname)
+       #aa=subprocess.run(["sh","CheckDocker.sh",Lname])
+       #print(aa)
+       aa=subprocess.run(["sh","Stop2RmDocker.sh",Lname])
        print(aa)
-       #subprocess.run(["sh","Stop2RmDocker.sh",Lname])
+     sysconfig.remove_section(cfgN)
+     sysconfig.write(open('System.ini', "w"))
      #print(AList)
 def dosomework(progress):
   for n in range(1, 80):
@@ -335,9 +381,9 @@ def View_parameters(fname):
   
   tb1.field_names = ["Criticality_Level",
                        "Level_MaxNum_Cores",
-                       "Use_Cores",
-                       "Cores_Weights",
-                       "Memory_Limit"
+                       "Level_Use_Cores",
+                       "Level_Cores_Weights",
+                       "Level_Memory_Limit"
                      ]
 
   for i in range(len(Criticality_Name)):
