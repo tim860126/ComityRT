@@ -5,8 +5,11 @@ import copy
 import subprocess
 import prettytable as pt
 import time
+import pyfiglet	
 import threading
 from progressbar import *
+
+
 #config = configparser.ConfigParser()
 
 
@@ -57,20 +60,24 @@ def Show_System_Status():
       stauts=status.decode('utf-8').split("\n")[0]
 
       if stauts=="false":
-        sysinfo=sysinfo+" "+cname+":Error "
+        sysinfo=sysinfo+" "+cname+":Error\n"
         syserror="true"
     
     if syserror!="true":
       sysinfo="System Running!"     
     tb1.add_row([sname,sysinfo])
-  
+
+  if len(sysname)==0:
+    tb1.add_row(["None","None"]) 
 
   #tb1.align="l"
   print(tb1)
 
 def Show_Welcom():
-  print('\n================ ComityRT-Control =================\n')
-	
+  
+  title = pyfiglet.figlet_format("ComityRT", font = "slant" )
+  #print('\n================ ComityRT-Control =================\n')
+  print(title)	
   print('Running System Status')
 
   Show_System_Status()
@@ -220,12 +227,15 @@ def Stop2Rm():
      config.read(path)
      AList=config.sections()
      AList.remove("ComityRT")
+     print(cfgN+" Start stop and delete....")
      for Lname in AList:
        #print(Lname)
        #aa=subprocess.run(["sh","CheckDocker.sh",Lname])
        #print(aa)
-       aa=subprocess.run(["sh","Stop2RmDocker.sh",Lname])
-       print(aa)
+       status=subprocess.check_output(["sh","Stop2RmDocker.sh",Lname])
+       status=status.decode('utf-8').split("\n")[0]
+       if status=="true":
+         print(Lname+" Successfully Deleted!")
      sysconfig.remove_section(cfgN)
      sysconfig.write(open('System.ini', "w"))
      #print(AList)

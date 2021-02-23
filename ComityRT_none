@@ -1,0 +1,56 @@
+import curses, time
+import pyfiglet, random
+import psutil
+import subprocess
+import math
+def get_io():
+    global value1
+    global cpu_num
+    global cpu_info
+    cpu_num=psutil.cpu_count(logical=True)
+    cpu_info=psutil.cpu_percent(interval=1,percpu=True)
+    value1 = "Core 2:"+str(cpu_info[2])
+ 
+def main(stdscr):# Create a string of text based on the Figlet font object
+  title = pyfiglet.figlet_format("ComityRT", font = "small" ) 
+# stdscr = curses.initscr() # create a curses object
+# Create a couple of color definitions
+  curses.start_color()
+  curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+  curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+  # Write the BIG TITLE text string
+  stdscr.addstr(1,0, title,curses.color_pair(1) )
+  stdscr.addstr(8,0, "Sensor 1: GPIO 7 Temperature Reading" ,curses.A_BOLD)
+ 
+  # Cycle getting new data, enter a 'q' to quit
+  stdscr.nodelay(1)
+  k = 0
+  while (k != ord('q')):
+    stdscr.clear()
+    stdscr.addstr(1,0, title,curses.color_pair(1) )
+    get_io()
+    for i in range(cpu_num):
+      ppi=math.ceil(cpu_info[i]/4)
+      string=""
+      for j in range(ppi):
+        string=string+"▇"
+      status="core "+str(i)+"|{0:25}".format(string)+"| "+str(cpu_info[i])+"%"
+      stdscr.addstr(10+i,0,status,curses.A_BOLD)
+    #stdscr.addstr(1,0, title,curses.color_pair(1) )
+    #stdscr.addstr(8,0, "Sensor 1: GPIO 7 Temperature Reading" ,curses.A_BOLD)
+    #stdscr.addstr(10,0,"core 0:"+str(cpu_info[0])+"%",curses.A_BOLD)
+    #stdscr.addstr(11,0,"core 1:"+str(cpu_info[1])+"%",curses.A_BOLD)
+    #stdscr.addstr(12,0,"core 2:"+str(cpu_info[2])+"%",curses.A_BOLD)
+    #stdscr.addstr(13,0,"core 3:"+str(cpu_info[3])+"%",curses.A_BOLD)
+    #stdscr.addstr(13,0,status,curses.A_BOLD)
+    stdscr.refresh()
+    time.sleep(1)
+    
+   
+    k = stdscr.getch()
+ 
+  curses.endwin()
+  raise Exception
+
+stdscr = curses.initscr()
+main(stdscr)
