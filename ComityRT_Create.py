@@ -257,7 +257,7 @@ def Found_config():
         choices.append(fname)
     return choices
   else:
-    print("config folder not found!")
+    print("config folder not found! *.ini")
     return False
 
 def Load_config():
