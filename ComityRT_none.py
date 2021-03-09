@@ -12,7 +12,10 @@ workfolder="./work/"
 
 multifolder="./multi-level/"
 
-def TimeStart(name,pr):
+workprintline=9
+
+
+def TimeStart(name):
    #string="{0:10}".format(name)+"↑"
    time.sleep(1)
    #string=config[name]['print']
@@ -24,41 +27,37 @@ def TimeStart(name,pr):
      stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
    #config[name]['print']=string
    
-def producer(str123,T,pr,name,pg1):
+def producer(str123,T,name):
     global config
     config[name]['status']="1"
-    tp1=threading.Thread(target=TimeStart,args=(name,pg1))
+    tp1=threading.Thread(target=TimeStart,args=(name,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
     tp1.start()
-    stdscr.addstr(pr,0,str123,curses.A_BOLD)
+    stdscr.addstr(int(config[name]['statuspr']),0,str123,curses.A_BOLD)
     os.system("docker exec "+str123)
     config[name]['status']="0"
-    stdscr.addstr(pr,0,str123+" OK",curses.A_BOLD)
+    stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK",curses.A_BOLD)
     #tp1.join()
 def RunWork(stdscr):
   i=0
-  pr=1
-  pg=8
   for wkname in config.sections():
     string="[process "+str(i+1)+": "+str(wkname)+" computing:%3d"%int(config[wkname]['c'])+" period:%3d"%int(config[wkname]['t'])+" level: "+str(config[wkname]['level'])+"]"
-    stdscr.addstr(pr+i,0,string,curses.A_BOLD)
+    stdscr.addstr(int(config[wkname]['workpr'])-5,0,string,curses.A_BOLD)
     sho=shutil.copy2(workfolder+str(wkname), multifolder+config[wkname]['level']+"/"+str(wkname))
     string2=str(wkname)+" was assigned to '"+sho+"'"
-    stdscr.addstr(pg+i,0,string2,curses.A_BOLD)
+    stdscr.addstr(int(config[wkname]['statuspr'])-5,0,string2,curses.A_BOLD)
     i=i+1
   #stdscr.addstr(12,0,"Start press s!",curses.A_BOLD) 
 
 def Start_Work():
-  pr=15
   i=0
-  pg1=9
   for wkname in config.sections():
     workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
     workperiod=config[wkname]['t']
-    config[wkname]['workpr']=str(pg1+i)
+    #config[wkname]['workpr']=str(pg1+i)
     #workname=str(workload[i]['WorkName'])
     #worklevel=str(workload[i]['level'])
-    t1=threading.Thread(target=producer,args=(workstats,workperiod,pr+i,wkname,pg1+i))
+    t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
     t1.start()
     #t2.start()
@@ -68,10 +67,17 @@ def Start_Work():
 def read_config():
     global config
     config = configparser.ConfigParser()
-    config.read('workload')  
+    config.read('workload')
+    i=0  
     for name in config.sections():
        config[name]['status']='0'
        config[name]['print']="{0:10}".format(name)
+       config[name]['workpr']=str(workprintline+i)
+       i=i+1    
+    j=0
+    for name in config.sections():
+      config[name]['statuspr']=str(workprintline+i+j+1)
+      j=j+1
 def get_io():
     global cpu_num
     global cpu_info
@@ -97,7 +103,7 @@ def main(stdscr):# Create a string of text based on the Figlet font object
   pad = curses.newpad(25,100)
   RunWork(pad)
   pad.refresh(0,0,0,0,20,60)
-  #time.sleep(3)
+  #time.sleep(5)
   Start_Work()
   #stdscr.addstr(18,0,"abc",curses.A_BOLD)
   settime=0
@@ -136,7 +142,7 @@ def main(stdscr):# Create a string of text based on the Figlet font object
     
     stdscr.addstr(8,0,worktime,curses.A_BOLD)
     #stdscr.addstr(21,0,"{0:10}".format("time")+"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",curses.A_BOLD)
-    stdscr.addstr(23,0,"time:"+str(settime)+" sec",curses.A_BOLD)
+    stdscr.addstr(6,0,"time:"+str(settime)+" sec",curses.A_BOLD)
     stdscr.refresh()
     for name in config.sections():
       if(config[name]['status']=="0"):
