@@ -33,10 +33,13 @@ def producer(str123,T,name):
     tp1=threading.Thread(target=TimeStart,args=(name,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
     tp1.start()
+    stdscr.move(int(config[name]['statuspr']),0)
+    stdscr.clrtoeol()
     stdscr.addstr(int(config[name]['statuspr']),0,str123,curses.A_BOLD)
     os.system("docker exec "+str123)
     config[name]['status']="0"
-    stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK",curses.A_BOLD)
+    config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
+    stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK next start "+config[name]['nextstart']+" sec",curses.A_BOLD)
     #tp1.join()
 def RunWork(stdscr):
   i=0
@@ -62,6 +65,11 @@ def Start_Work():
     t1.start()
     #t2.start()
     i=i+1
+def Run_Work(wkname):
+  workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
+  workperiod=config[wkname]['t']
+  t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
+  t1.start()
 
 
 def read_config():
@@ -73,6 +81,7 @@ def read_config():
        config[name]['status']='0'
        config[name]['print']="{0:10}".format(name)
        config[name]['workpr']=str(workprintline+i)
+       config[name]['nextstart']=str(0)
        i=i+1    
     j=0
     for name in config.sections():
@@ -106,8 +115,8 @@ def main(stdscr):# Create a string of text based on the Figlet font object
   #time.sleep(5)
   Start_Work()
   #stdscr.addstr(18,0,"abc",curses.A_BOLD)
+  global settime
   settime=0
-  
   while (k != ord('q')):
     if int(settime%20)==0 or settime==0:
       p=settime/20
@@ -123,8 +132,11 @@ def main(stdscr):# Create a string of text based on the Figlet font object
     #stdscr.clear()
     #Start_Work()
     #stdscr.addstr(1,0, title,curses.color_pair(1) )
-    if settime%15==0 and settime!=0:
-      Start_Work()
+    #if settime%15==0 and settime!=0:
+    #  Start_Work()
+    for name in config.sections():
+      if config[name]['nextstart']==str(settime) and settime!=0:
+        Run_Work(name) 
     get_io()
     for i in range(cpu_num):
       ppi=math.ceil(cpu_info[i]/4)
@@ -142,7 +154,15 @@ def main(stdscr):# Create a string of text based on the Figlet font object
     
     stdscr.addstr(8,0,worktime,curses.A_BOLD)
     #stdscr.addstr(21,0,"{0:10}".format("time")+"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",curses.A_BOLD)
-    stdscr.addstr(6,0,"time:"+str(settime)+" sec",curses.A_BOLD)
+    s=0
+    m=0
+    if settime>60:
+      m=settime/60
+      s=settime-(60*int(m))
+      timeprint=str(int(m))+" min "+str(int(s))+" sec"
+    else:
+      timeprint=str(settime)+" sec"
+    stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
     stdscr.refresh()
     for name in config.sections():
       if(config[name]['status']=="0"):
