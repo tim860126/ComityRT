@@ -1,5 +1,6 @@
 import curses, time
 import pyfiglet, random
+import inquirer
 import psutil
 import subprocess
 import math
@@ -12,8 +13,37 @@ workfolder="./work/"
 
 multifolder="./multi-level/"
 
+logfolder="./logs/"
+
 workprintline=9
 
+def WriteLog(string):
+  localtime = time.localtime()
+  localtime = time.strftime("%Y-%m-%d-%I:%M:%S ", localtime)
+  f = open(logname,'a+')
+  f.write(localtime+string)
+  f.close()
+
+def Choose_config(choices):
+  global logname
+  questions = [
+  inquirer.List('action',
+                message="Choose An configuration file",
+                choices=choices,
+            ),
+  ]
+  answers = inquirer.prompt(questions)
+  cfg = configparser.ConfigParser()
+  print(answers['action'])
+  localtime = time.localtime()
+  localtime = time.strftime("%Y-%m-%d-%I:%M:%S", localtime)
+  runingstr="Running {system} system at {starttime}\n".format(system=answers['action'],starttime=localtime)
+  logname=logfolder+"ComityRT."+answers['action']+"."+str(localtime)
+  f = open(logname,'w+')
+  f.write(runingstr)
+  f.close()
+  cfg.read("./config/"+answers['action']+".ini")
+  return cfg['ComityRT']['Workload_Name']
 
 def TimeStart(name):
    #string="{0:10}".format(name)+"↑"
@@ -30,6 +60,11 @@ def TimeStart(name):
 def producer(str123,T,name):
     global config
     config[name]['status']="1"
+    C="{0:4}".format(config[name]['C'])
+    T="{0:4}".format(config[name]['T'])
+    level="{0:8}".format(config[name]['level'])
+    worklog="Run {name} in {level} excution {C} period {T}\n".format(name=name,level=level,C=C,T=T)
+    WriteLog(worklog)
     tp1=threading.Thread(target=TimeStart,args=(name,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
     tp1.start()
@@ -37,6 +72,8 @@ def producer(str123,T,name):
     stdscr.clrtoeol()
     stdscr.addstr(int(config[name]['statuspr']),0,str123,curses.A_BOLD)
     os.system("docker exec "+str123)
+    worklog="Finish {name} \n".format(name=name)
+    WriteLog(worklog)
     config[name]['status']="0"
     config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
     stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK next start "+config[name]['nextstart']+" sec",curses.A_BOLD)
@@ -72,10 +109,10 @@ def Run_Work(wkname):
   t1.start()
 
 
-def read_config():
+def read_config(workloadname):
     global config
     config = configparser.ConfigParser()
-    config.read('workload')
+    config.read(workloadname)
     i=0  
     for name in config.sections():
        config[name]['status']='0'
@@ -87,13 +124,14 @@ def read_config():
     for name in config.sections():
       config[name]['statuspr']=str(workprintline+i+j+1)
       j=j+1
+
 def get_io():
     global cpu_num
     global cpu_info
     cpu_num=psutil.cpu_count(logical=True)
     cpu_info=psutil.cpu_percent(interval=1,percpu=True)
  
-def main(stdscr):# Create a string of text based on the Figlet font object
+def main(stdscr,workloadname):# Create a string of text based on the Figlet font object
   global worktime
   title = pyfiglet.figlet_format("ComityRT", font = "small" ) 
 # stdscr = curses.initscr() # create a curses object
@@ -101,7 +139,7 @@ def main(stdscr):# Create a string of text based on the Figlet font object
   curses.start_color()
   curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
   curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
-  read_config()
+  read_config(workloadname)
   # Write the BIG TITLE text string
   #stdscr.addstr(1,0, title,curses.color_pair(1) )
   #stdscr.addstr(8,0, "Sensor 1: GPIO 7 Temperature Reading" ,curses.A_BOLD)
@@ -166,14 +204,19 @@ def main(stdscr):# Create a string of text based on the Figlet font object
     stdscr.refresh()
     for name in config.sections():
       if(config[name]['status']=="0"):
-        config[name]['print']=config[name]['print']+"$"
+        config[name]['print']=config[name]['print']+" "
     settime=settime+1
     #stdscr.addstr(15,0,config.sections()[0],curses.A_BOLD)
     
     k = stdscr.getch()
  
   curses.endwin()
+  WriteLog("System Running Total {} \n".format(timeprint))
   raise Exception
 
+cfg = configparser.ConfigParser()
+cfg.read("System.ini")
+choice=cfg.sections()
+workloadname=Choose_config(choice)
 stdscr = curses.initscr()
-main(stdscr)
+main(stdscr,workloadname)
