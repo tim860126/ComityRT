@@ -19,7 +19,7 @@ workprintline=9
 
 def WriteLog(string):
   localtime = time.localtime()
-  localtime = time.strftime("%Y-%m-%d-%I:%M:%S ", localtime)
+  localtime = time.strftime("%I:%M:%S ", localtime)
   f = open(logname,'a+')
   f.write(localtime+string)
   f.close()
@@ -60,10 +60,11 @@ def TimeStart(name):
 def producer(str123,T,name):
     global config
     config[name]['status']="1"
+    pname="{0:10}".format(name)
     C="{0:4}".format(config[name]['C'])
     T="{0:4}".format(config[name]['T'])
     level="{0:8}".format(config[name]['level'])
-    worklog="Run {name} in {level} excution {C} period {T}\n".format(name=name,level=level,C=C,T=T)
+    worklog="Run {name} in {level} excution {C} period {T}\n".format(name=pname,level=level,C=C,T=T)
     WriteLog(worklog)
     tp1=threading.Thread(target=TimeStart,args=(name,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
