@@ -58,6 +58,8 @@ def Show_System_Status():
     sysinfo="" 
     syserror=""
     for cname in Criti_Name:
+      SubL=[]
+      Del=[]
       status=subprocess.check_output(["sh","CheckDocker.sh",cname])   
       
       stauts=status.decode('utf-8').split("\n")[0]
@@ -68,9 +70,8 @@ def Show_System_Status():
       
       if config[cname]['Sub_Level']=="true":
          SubL= config[cname].keys()
-         DelL= Config_ConList
+         DelL= Config_ConList.copy()
          DelL.remove("Back")
-
          for k in DelL:
            SubL.remove(k)
          for SubN in SubL:
@@ -80,6 +81,7 @@ def Show_System_Status():
            if stauts=="false":
              sysinfo=sysinfo+" "+SubN+":Error\n"
              syserror="true"
+         #print(cname,config[cname]['Sub_Level'])
 
     if syserror!="true":
       sysinfo="System Running!"     
@@ -241,7 +243,7 @@ def Bulid_system():
 
       if Ciritical_container[i]['Sub_Level']=="true":
         SubL= Ciritical_container[i].keys()
-        DelL= Config_ConList
+        DelL= Config_ConList.copy()
         DelL.remove("Back")
         for k in DelL:
           SubL.remove(k)
@@ -291,8 +293,8 @@ def Stop2Rm():
        if config[Lname]['Sub_Level']=="true": 
          
          SubL= config[Lname].keys()
-         DelL= Config_ConList
-         #DelL.remove("Back")
+         DelL= Config_ConList.copy()
+         DelL.remove("Back")
          for k in DelL:
            SubL.remove(k)
          for SubN in SubL:
