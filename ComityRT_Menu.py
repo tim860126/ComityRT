@@ -121,7 +121,21 @@ def Choose_List():
   elif answers['action']=="(4)System Stop":
     Stop2Rm()
   elif answers['action']=="(5)View ComityRT Log":
-    print("5")
+    Choose_logs()
+
+def Choose_logs():
+  questions = [
+  inquirer.List('action',
+                message="Choose An Action",
+                choices=['(1)Create logs', '(2)Deleted logs'],
+            ),
+  ]
+  answers = inquirer.prompt(questions)
+  logspath="./logs/"
+  if answers['action']=="(1)Create logs":
+    os.system("cat "+logspath+"CreateDocker")
+  elif answers['action']=="(2)Deleted logs":
+    os.system("cat "+logspath+"DeletedDocker")
 
 def Choose_config(choices):
   questions = [
@@ -252,6 +266,7 @@ def Bulid_system():
           for j in range(len(Ciritical_container[i][SubN]['Level_Use_Cores'])):
             Sub_Level_Use_Cores=Sub_Level_Use_Cores+Ciritical_container[i][SubN]['Level_Use_Cores'][j]+","
           Sub_Level_Use_Cores=Sub_Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
+          #print(Sub_Level_Use_Cores)
          
           CreateCMD(SubN,Sub_Level_Use_Cores)
           progress = ProgressBar().start()
