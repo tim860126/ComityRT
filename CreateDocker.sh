@@ -1,6 +1,6 @@
 #!/bin/sh
 
-docker run -it -d --privileged --cpuset-cpus="$1" --name=$2 -v /ComityRT/multi-level/$2:/multi-level/$2 tim860126/multi-level:v1 /bin/sh > /dev/null
+docker run -it -d --privileged --cpuset-cpus="$1" --cpus="$3" --name=$2 -v /ComityRT/multi-level/$2:/multi-level/$2 tim860126/multi-level:v1 /bin/sh > /dev/null
 
 time=$(date "+%Y-%m-%d %H:%M:%S")
 

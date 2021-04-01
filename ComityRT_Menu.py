@@ -243,11 +243,12 @@ def Bulid_system():
   
     for i in range(len(Criticality_Name)):
       Level_Use_Cores=""
+      Level_Cores_Weights=Ciritical_container[i]['Level_Cores_Weights']
       for j in range(len(Ciritical_container[i]['Level_Use_Cores'])):
         Level_Use_Cores=Level_Use_Cores+Ciritical_container[i]['Level_Use_Cores'][j]+","
       Level_Use_Cores=Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
-   
-      CreateCMD(Criticality_Name[i],Level_Use_Cores)
+      print(Level_Cores_Weights)
+      CreateCMD(Criticality_Name[i],Level_Use_Cores,Level_Cores_Weights)
       progress = ProgressBar().start()
       t1=threading.Thread(target=dosomework,args=(progress,))
       t1.start()
@@ -263,12 +264,13 @@ def Bulid_system():
           SubL.remove(k)
         for SubN in SubL:
           Sub_Level_Use_Cores=""
+          Sub_Level_Cores_Weights=Ciritical_container[i][SubN]['Level_Cores_Weights']
           for j in range(len(Ciritical_container[i][SubN]['Level_Use_Cores'])):
             Sub_Level_Use_Cores=Sub_Level_Use_Cores+Ciritical_container[i][SubN]['Level_Use_Cores'][j]+","
           Sub_Level_Use_Cores=Sub_Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
           #print(Sub_Level_Use_Cores)
-         
-          CreateCMD(SubN,Sub_Level_Use_Cores)
+          print(Sub_Level_Cores_Weights)
+          CreateCMD(SubN,Sub_Level_Use_Cores,Sub_Level_Cores_Weights)
           progress = ProgressBar().start()
           t1=threading.Thread(target=dosomework,args=(progress,))
           t1.start()
@@ -327,9 +329,9 @@ def dosomework(progress):
     progress.update(int(n/(80-1)*100))
     time.sleep(0.01)
 
-def CreateCMD(Name,CPU_U):
+def CreateCMD(Name,CPU_U,weights):
   #print(Name+" "+CPU_U)
-  subprocess.run(["sh","CreateDocker.sh",CPU_U,Name])
+  subprocess.run(["sh","CreateDocker.sh",CPU_U,Name,weights])
 
 def Found_config():
   choices=[]
