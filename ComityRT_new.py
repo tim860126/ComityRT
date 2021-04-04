@@ -26,6 +26,8 @@ def WriteLog(string):
 
 def Choose_config(choices):
   global logname
+  global WorkQueue
+  WorkQueue={}
   questions = [
   inquirer.List('action',
                 message="Choose An configuration file",
@@ -43,6 +45,13 @@ def Choose_config(choices):
   f.write(runingstr)
   f.close()
   cfg.read("./config/"+answers['action']+".ini")
+  levellist=cfg.sections()
+  levellist.remove("ComityRT")
+  for level in levellist:
+    WorkQueue[level]=dict()
+    WorkQueue[level]['status']=0
+    WorkQueue[level]['Queue']=list()
+ 
   return cfg['ComityRT']['Workload_Name']
 
 def TimeStart(name):
@@ -117,15 +126,29 @@ def Start_Work():
     t1.start()
     #t2.start()
     i=i+1
+
 def Run_Work(wkname):
   workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
   workperiod=config[wkname]['t']
   t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
   t1.start()
 
-
+def WorkSort(config):
+  global WorkQueue
+  for level in WorkQueue:
+    for i in range(len(WorkQueue[level]['Queue'])):
+      for j in range(i):
+        aa=int(config[WorkQueue[level]['Queue'][j]]['a'])
+        bb=int(config[WorkQueue[level]['Queue'][i]]['a'])
+        if aa > bb :
+          temp=WorkQueue[level]['Queue'][j]
+          WorkQueue[level]['Queue'][j]=WorkQueue[level]['Queue'][i]
+          WorkQueue[level]['Queue'][i]=temp
+  print(WorkQueue)
+  time.sleep(5)
 def read_config(workloadname):
     global config
+    global WorkQueue
     config = configparser.ConfigParser()
     config.read(workloadname)
     i=0  
@@ -138,8 +161,10 @@ def read_config(workloadname):
     j=0
     for name in config.sections():
       config[name]['statuspr']=str(workprintline+i+j+1)
+      WorkQueue[config[name]['level']]['Queue'].append(name)
       j=j+1
-
+    WorkSort(config)
+   
 def get_io():
     global cpu_num
     global cpu_info
