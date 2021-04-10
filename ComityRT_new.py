@@ -24,6 +24,12 @@ def WriteLog(string):
   f.write(localtime+string)
   f.close()
 
+def StopWork(wname):
+  os.system("./StopWork.sh "+wname);
+  WorkQueue[config[wname]['level']]['status']=0
+  WorkQueue[config[wname]['level']]['Queue'].append(wname)
+  config[wname]['status']="0"
+
 def Choose_config(choices):
   global logname
   global WorkQueue
@@ -91,17 +97,20 @@ def producer(str123,T,name):
     #ggg[0] level ggg[1] ggg[2] ggg[3]
     #os.system("docker exec "+str123)
     por=subprocess.run(["docker", "exec",ggg[0],ggg[1],ggg[2],ggg[3]])
+    #por=subprocess.run(["docker", "exec",ggg[0],ggg[3]])
     if config[name]['status']!="-1":
       worklog="Finish {name} \n".format(name=name)
       WriteLog(worklog)
       config[name]['status']="0"
       WorkQueue[config[name]['level']]['status']=0
-      if len(WorkQueue[config[name]['level']]['Queue'])>0:
-        for qwname in WorkQueue[config[name]['level']]['Queue']:
-          if qwname != name:
-            config[qwname]['nextstart']=str(int(config[qwname]['nextstart'])+int(config[name]['c']))
+ 
+      #if len(WorkQueue[config[name]['level']]['Queue'])>0:
+      #  for qwname in WorkQueue[config[name]['level']]['Queue']:
+      #    if qwname != name:
+      #      config[qwname]['nextstart']=str(int(config[qwname]['nextstart'])+int(config[name]['c']))
+     
       config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
-      stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK next start "+config[name]['nextstart']+" sec ",curses.A_BOLD)
+      stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK next arrive "+config[name]['nextstart']+" sec ",curses.A_BOLD)
     #tp1.join()
     else:
       worklog="Kill {name} \n".format(name=name)
@@ -172,6 +181,7 @@ def read_config(workloadname):
        config[name]['print']="{0:10}".format(name)
        config[name]['workpr']=str(workprintline+i)
        config[name]['nextstart']=str(config[name]['a'])
+       config[name]['priority']=0
        i=i+1    
     j=0
     for name in config.sections():
@@ -243,9 +253,9 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
       if config[name]['nextstart']==str(settime):
         WorkQueue[config[name]['level']]['Queue'].append(name)
         WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])
-        stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
-        stdscr.clrtoeol()
-        stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
+        #stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
+        #stdscr.clrtoeol()
+        #stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
     
     for level in WorkQueue:
       if WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
@@ -255,7 +265,11 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
       stdscr.move(int(WorkQueue[level]['statuspr']),0)
       stdscr.clrtoeol()
       stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
-     
+    
+    #if settime==8:
+    #  StopWork("work2")
+        
+    
     get_io()
     for i in range(cpu_num):
       ppi=math.ceil(cpu_info[i]/4)
