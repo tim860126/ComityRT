@@ -1,3 +1,3 @@
 #!/bin/sh
 
-kill $(pidof $1)
+kill -9 $(pidof $1)
