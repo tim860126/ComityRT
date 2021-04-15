@@ -1,4 +1,2 @@
-import os 
-
-print(os.system("pidof PrintXX"))
-os.system("kill $(pidof PrintXX)")
+import os
+os.system("pidof -s work3") 
