@@ -108,30 +108,56 @@ def Choose_config(choices):
 def SystemTimeStart():
    global settime
    global config
+   timeprint=""
+   for name in config.sections():
+     tp1=threading.Thread(target=TimeStart,args=(name,))
+     tp1.start()
    while(1):
      time.sleep(1)
      settime=settime+1
-     for name in config.sections():
-       if(config[name]['status']=="0" or config[name]['status']=="-1"):
-         config[name]['print']=config[name]['print']+" "
-       elif config[name]['status']=="1":
-         config[name]['print']=config[name]['print']+"▄"
+     s=0
+     m=0
+     if settime>60:
+       m=settime/60
+       s=settime-(60*int(m))
+       timeprint=str(int(m))+" min "+str(int(s))+" sec"
+     else:
+       timeprint=str(settime)+" sec"
+     
+     stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
+
+     #for name in config.sections():
+     #  if(config[name]['status']=="0" or config[name]['status']=="-1"):
+     #    config[name]['print']=config[name]['print']+" "
+     #    stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
+     #  elif config[name]['status']=="1":
+     #    config[name]['print']=config[name]['print']+"▄"
+     #    stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
 def TimeStart(name):
+   while(1):
+     time.sleep(1)
+     if(config[name]['status']=="0" or config[name]['status']=="-1"):
+       config[name]['print']=config[name]['print']+" "
+       stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
+     elif config[name]['status']=="1":
+       config[name]['print']=config[name]['print']+"▄"
+       stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
+   
    #string="{0:10}".format(name)+"↑"
    #time.sleep(1)
    #string=config[name]['print']
    #time.sleep(1)
-   i=0;
-   j=0; 
-   while(config[name]['status']=='1' or config[name]['status']=='-1'):
+   #i=0;
+   #j=0; 
+   #while(config[name]['status']=='1' or config[name]['status']=='-1'):
      
-     time.sleep(1)
-     while(config[name]['status']=='-1'):
-       i=i+1 
+   #  time.sleep(1)
+     #while(config[name]['status']=='-1'):
+       #i=i+1 
      #string=string+"▄"
        #config[name]['print']=config[name]['print']+"▄"
-     stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
-     j=j+1
+   #  stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
+   #  j=j+1
      #if len(WorkQueue[config[name]['level']]['Queue'])>0:
      #   for qwname in WorkQueue[config[name]['level']]['Queue']:
      #     if qwname != name:
@@ -148,9 +174,9 @@ def producer(str123,T,name):
     level="{0:8}".format(config[name]['level'])
     worklog="Run {name} in {level} excution {C} period {T}\n".format(name=pname,level=level,C=C,T=T)
     WriteLog(worklog)
-    tp1=threading.Thread(target=TimeStart,args=(name,))
+    #tp1=threading.Thread(target=TimeStart,args=(name,))
     #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
-    tp1.start()
+    #tp1.start()
     config[name]['statusprint']=str123
     stdscr.move(int(config[name]['statuspr']),0)
     stdscr.clrtoeol()
@@ -186,7 +212,8 @@ def producer(str123,T,name):
     #  WorkQueue[config[name]['level']]['status']=0
     #  config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
     #  stdscr.addstr(int(config[name]['statuspr']),0,str123+" Kill next start "+config[name]['nextstart']+" sec ",curses.A_BOLD)
-
+    Check_Work()
+    Schedule()
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
@@ -303,12 +330,57 @@ def read_config(workloadname):
       k=k+1
     priority_method(config,"RM")
     WorkSort(config)
-    time.sleep(5)
+   # time.sleep(5)
 def get_io():
     global cpu_num
     global cpu_info
     cpu_num=psutil.cpu_count(logical=True)
     cpu_info=psutil.cpu_percent(interval=1,percpu=True)
+
+def Check_Work():
+  global config
+  global WorkQueue
+  for name in config.sections():
+      if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']==1:
+         KillWork(name)
+
+      if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
+        #WorkQueue[config[name]['level']]['Queue'].append(name)
+
+        if len(WorkQueue[config[name]['level']]['Queue'])>0: #加入的工作優先權向前排
+          ch=0
+          for i in range(len(WorkQueue[config[name]['level']]['Queue'])): #將工作依照優先權加入的佇列中
+            if config[name]['priority'] > config[WorkQueue[config[name]['level']]['Queue'][i]]['priority']:
+              WorkQueue[config[name]['level']]['Queue'].insert(i,name)
+              ch=1
+              break
+
+          if ch==0:#假設工作是佇列優先權最低
+            WorkQueue[config[name]['level']]['Queue'].append(name)
+
+          #判斷新工作的優先權是否比運行中工作的優先權高 有就切換運行並將工作排回柱列
+          if WorkQueue[config[name]['level']]['run']!="":
+            if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
+              StopWork(WorkQueue[config[name]['level']]['run'])
+              wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
+              WorkQueue[config[name]['level']]['run']=wname
+              Run_Work(wname)
+
+        else:#佇列沒工作
+          WorkQueue[config[name]['level']]['Queue'].append(name)
+          if WorkQueue[config[name]['level']]['run']!="":
+            if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
+              StopWork(WorkQueue[config[name]['level']]['run'])
+
+              wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
+              WorkQueue[config[name]['level']]['run']=wname
+              Run_Work(wname)
+
+        WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])
+
+        stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
+        stdscr.clrtoeol()
+        stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
  
 def main(stdscr,workloadname):# Create a string of text based on the Figlet font object
   global worktime
@@ -334,6 +406,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
   #stdscr.addstr(18,0,"abc",curses.A_BOLD)
   global settime
   settime=0
+  stdscr.addstr(6,0,"time:"+str(settime)+" sec",curses.A_BOLD)
   tp1=threading.Thread(target=SystemTimeStart,args=())
   tp1.start()
   while (k != ord('q')):
@@ -348,6 +421,9 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
       for i in range(int(p)*20,20*(int(p)+1)+1,5):
         gg=gg+str(i)+"   "
       worktime="{0:10}".format("time")+gg
+    stdscr.addstr(8,0,worktime,curses.A_BOLD)
+
+
     #stdscr.clear()
     #Start_Work()
     #stdscr.addstr(1,0, title,curses.color_pair(1) )
@@ -359,48 +435,48 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #    Run_Work(name) 
     #
     ch=0
-    for name in config.sections():
-      if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']==1:
-         KillWork(name)   
-      
-      if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
-        #WorkQueue[config[name]['level']]['Queue'].append(name)
-        
-        if len(WorkQueue[config[name]['level']]['Queue'])>0: #加入的工作優先權向前排
-          ch=0
-          for i in range(len(WorkQueue[config[name]['level']]['Queue'])): #將工作依照優先權加入的佇列中
-            if config[name]['priority'] > config[WorkQueue[config[name]['level']]['Queue'][i]]['priority']:
-              WorkQueue[config[name]['level']]['Queue'].insert(i,name)
-              ch=1
-              break
-          
-          if ch==0:#假設工作是佇列優先權最低
-            WorkQueue[config[name]['level']]['Queue'].append(name)
-        
-	  #判斷新工作的優先權是否比運行中工作的優先權高 有就切換運行並將工作排回柱列
-          if WorkQueue[config[name]['level']]['run']!="":
-            if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
-              StopWork(WorkQueue[config[name]['level']]['run'])
-              wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
-              WorkQueue[config[name]['level']]['run']=wname
-              Run_Work(wname) 
-
-        else:#佇列沒工作
-          WorkQueue[config[name]['level']]['Queue'].append(name)
-          if WorkQueue[config[name]['level']]['run']!="":
-            if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
-              StopWork(WorkQueue[config[name]['level']]['run'])
-            
-              wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
-              WorkQueue[config[name]['level']]['run']=wname
-              Run_Work(wname)
- 
-        WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])
-	        
-        stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
-        stdscr.clrtoeol()
-        stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
-    
+    #for name in config.sections():
+    #  if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']==1:
+    #     KillWork(name)   
+    #  
+    #  if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
+    #    #WorkQueue[config[name]['level']]['Queue'].append(name)
+    #    
+    #    if len(WorkQueue[config[name]['level']]['Queue'])>0: #加入的工作優先權向前排
+    #      ch=0
+    #      for i in range(len(WorkQueue[config[name]['level']]['Queue'])): #將工作依照優先權加入的佇列中
+    #        if config[name]['priority'] > config[WorkQueue[config[name]['level']]['Queue'][i]]['priority']:
+    #          WorkQueue[config[name]['level']]['Queue'].insert(i,name)
+    #          ch=1
+    #          break
+    #      
+    #      if ch==0:#假設工作是佇列優先權最低
+    #       WorkQueue[config[name]['level']]['Queue'].append(name)
+    #    
+    #	  #判斷新工作的優先權是否比運行中工作的優先權高 有就切換運行並將工作排回柱列
+    #      if WorkQueue[config[name]['level']]['run']!="":
+    #        if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
+    #          StopWork(WorkQueue[config[name]['level']]['run'])
+    #          wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
+    #          WorkQueue[config[name]['level']]['run']=wname
+    #          Run_Work(wname) 
+    #
+    #    else:#佇列沒工作
+    #      WorkQueue[config[name]['level']]['Queue'].append(name)
+    #      if WorkQueue[config[name]['level']]['run']!="":
+    #        if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
+    #          StopWork(WorkQueue[config[name]['level']]['run'])
+    #        
+    #          wname=WorkQueue[config[name]['level']]['Queue'].pop(0)
+    #          WorkQueue[config[name]['level']]['run']=wname
+    #          Run_Work(wname)
+    #
+    #    WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])
+    #	        
+    #    stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
+    #    stdscr.clrtoeol()
+    #    stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
+    Check_Work()
     Schedule()
     
     #for level in WorkQueue:
@@ -433,17 +509,17 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(10,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     #stdscr.addstr(11,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     
-    stdscr.addstr(8,0,worktime,curses.A_BOLD)
+    #stdscr.addstr(8,0,worktime,curses.A_BOLD)
     #stdscr.addstr(21,0,"{0:10}".format("time")+"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",curses.A_BOLD)
-    s=0
-    m=0
-    if settime>60:
-      m=settime/60
-      s=settime-(60*int(m))
-      timeprint=str(int(m))+" min "+str(int(s))+" sec"
-    else:
-      timeprint=str(settime)+" sec"
-    stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
+    #s=0
+    #m=0
+    #if settime>60:
+    #  m=settime/60
+    #  s=settime-(60*int(m))
+    #  timeprint=str(int(m))+" min "+str(int(s))+" sec"
+    #else:
+    #  timeprint=str(settime)+" sec"
+    #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
     stdscr.refresh()
     #for name in config.sections():
     #  if(config[name]['status']=="0" or config[name]['status']=="-1"):
