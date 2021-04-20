@@ -29,9 +29,10 @@ def WriteLog(string):
 def ChangeLevel(wname,level,chlevel):
   global WorkQueue
   global config
+  FindPid(wname)
   StopWork(wname)
   WorkQueue[level]['Queue'].remove(wname)
-  os.system("./ChangeContainer.sh "+chlevel+" "+wname)
+  os.system("./ChangeContainer.sh "+chlevel+" "+config[wname]['pid'])
   WorkQueue[level]['run']=""
   config[wname]['level']=chlevel
   config[wname]['c']=config[wname][chlevel]
@@ -43,23 +44,32 @@ def ChangeLevel(wname,level,chlevel):
   #Check_Work()
   WorkQueue[chlevel]['Queue'].append(wname)
   LevelSort(chlevel)
-  WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])
+  WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])
   stdscr.move(int(WorkQueue[level]['statuspr']),0)
   stdscr.clrtoeol()
   stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
-  WorkQueue[chlevel]['print']=chlevel+":"+str(WorkQueue[chlevel]['Queue'])+" "+str(WorkQueue[chlevel]['status'])
+  WorkQueue[chlevel]['print']=chlevel+":"+str(WorkQueue[chlevel]['Queue'])+" "+str(WorkQueue[chlevel]['status'])+" "+str(WorkQueue[chlevel]['run']
+  )
   stdscr.move(int(WorkQueue[chlevel]['statuspr']),0)
   stdscr.clrtoeol()
   stdscr.addstr(int(WorkQueue[chlevel]['statuspr']),0,WorkQueue[chlevel]['print'],curses.A_BOLD)
   Schedule()
+
+def FindPid(wname):
+  global config
+  c=subprocess.check_output(['pidof',wname])
+  c=c.decode('utf-8').split("\n")[0]
+  config[wname]['pid']=c
+
 def ContWork(wname):
   global WorkQueue
   global config
-  
+  FindPid(wname)
   #os.system("./ContWork.sh "+wname);
   WorkQueue[config[wname]['level']]['status']=1 
   config[wname]['status']="1"
-  os.system("kill -CONT $(pidof "+wname+")")
+  #os.system("kill -CONT $(pidof "+wname+")")
+  os.system("kill -CONT "+config[wname]['pid'])
   worklog="Cont {name} in {level}\n".format(name=wname,level=config[wname]['level'])
   WriteLog(worklog)
   stdscr.move(int(config[wname]['statuspr']),0)
@@ -72,13 +82,15 @@ def ContWork(wname):
 def KillWork(wname):
   global workQueue
   global config
+  FindPid(wname)
   #WorkQueue[config[wname]['level']]['status']=0
   config[wname]['status']="0"
   #os.system("kill -9 "+str(pid))
   WorkQueue[config[wname]['level']]['status']=0
   WorkQueue[config[wname]['level']]['run']=""
   config[wname]['runtime']="0"
-  os.system("kill -9 $(pidof "+wname+")")
+  #os.system("kill -9 $(pidof "+wname+")")
+  os.system("kill -9 "+config[wname]['pid'])
   worklog="Kill {name} in {level}\n".format(name=wname,level=config[wname]['level'])
   WriteLog(worklog)
   stdscr.move(int(config[wname]['statuspr']),0)
@@ -88,10 +100,12 @@ def KillWork(wname):
 def StopWork(wname):
   global WorkQueue
   global config
+  FindPid(wname)
   #c=os.system("pidof "+wname)
   #print(c)
-  if config[wname]['status']!=0:
-    os.system("kill -STOP $(pidof "+wname+")")
+  if config[wname]['status']!=100:
+    #os.system("kill -STOP $(pidof "+wname+")")
+    os.system("kill -STOP "+config[wname]['pid'])
     worklog="Stop {name} in {level}\n".format(name=wname,level=config[wname]['level'])
     WriteLog(worklog)
     #os.system("./StopWork.sh "+wname);
@@ -179,8 +193,11 @@ def SystemTimeStart():
          KillWork(name)
      stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
 def TimeStart(name):
-   while(1):
-     time.sleep(1)
+  global config
+  time.sleep(0.5)
+  #c=subprocess.check_output(['pidof','work4'])
+  #c=c.decode('utf-8').split("\n")[0]
+  #config[name]['pid']=c
      #if(config[name]['status']=="0" or config[name]['status']=="-1"):
      #  config[name]['print']=config[name]['print']+" "
      #  stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
@@ -240,11 +257,10 @@ def producer(str123,T,name):
     WriteLog(worklog)
     config[name]['status']="0"
     config[name]['runtime']="0"
-    config[name]['level']=config[name]['orilevel']
     config[name]['c']=config[name][config[name]['orilevel']]
     WorkQueue[config[name]['level']]['status']=0
     WorkQueue[config[name]['level']]['run']=""
-    
+    config[name]['level']=config[name]['orilevel'] 
       #if len(WorkQueue[config[name]['level']]['Queue'])>0:
       #  for qwname in WorkQueue[config[name]['level']]['Queue']:
       #    if qwname != name:
@@ -490,7 +506,7 @@ def Check_Work():
               #WorkQueue[config[name]['level']]['run']=wname
               #Run_Work(wname)
               Preemption(name)
-        WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])
+        WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
 
         stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
         stdscr.clrtoeol()
@@ -626,7 +642,19 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(11,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     
     #stdscr.addstr(8,0,worktime,curses.A_BOLD)
-    stdscr.addstr(28,0,config['work4']['runtime'],curses.A_BOLD)
+    stdscr.move(29,0)
+    stdscr.clrtoeol()
+    stdscr.move(30,0)
+    stdscr.clrtoeol()
+    stdscr.move(31,0)
+    stdscr.clrtoeol()
+    stdscr.move(32,0)
+    stdscr.clrtoeol()
+    stdscr.addstr(29,0,config['work2']['runtime']+" status "+config['work2']['status'],curses.A_BOLD)
+    stdscr.addstr(30,0,config['work3']['runtime']+" status "+config['work3']['status'],curses.A_BOLD)
+    stdscr.addstr(31,0,config['work4']['runtime']+" status "+config['work4']['status'],curses.A_BOLD)
+    stdscr.addstr(32,0,config['work5']['runtime']+" status "+config['work5']['status'],curses.A_BOLD)
+
     #s=0
     #m=0
     #if settime>60:

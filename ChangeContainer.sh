@@ -1,7 +1,8 @@
 #!/bin/sh
 
 cID=$(docker inspect -f '{{.ID}}' $1)
-WPID=$(pidof $2)
+#WPID=$(pidof $2)
+WPID=$2
 echo "${time} PID ${WPID} level: $1 work $2" >> ./Change
 echo ${WPID} >> /sys/fs/cgroup/hugetlb/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/cpuset/system.slice/docker-${cID}.scope/tasks
