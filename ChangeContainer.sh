@@ -2,6 +2,7 @@
 
 cID=$(docker inspect -f '{{.ID}}' $1)
 WPID=$(pidof $2)
+echo "${time} PID ${WPID} level: $1 work $2" >> ./Change
 echo ${WPID} >> /sys/fs/cgroup/hugetlb/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/cpuset/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/blkio/system.slice/docker-${cID}.scope/tasks
@@ -16,5 +17,4 @@ echo ${WPID} >> /sys/fs/cgroup/cpuacct/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/cpu/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/systemd/system.slice/docker-${cID}.scope/tasks
 echo ${WPID} >> /sys/fs/cgroup/freezer/system.slice/docker-${cID}.scope/tasks
-
 
