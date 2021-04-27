@@ -122,6 +122,7 @@ def StopWork(wname):
   #stdscr.addstr(28,0,wname+":"+config[wname]['status'],curses.A_BOLD)
 
 def Choose_config(choices):
+  global sysconfig
   global logname
   global WorkQueue
   global levellist
@@ -133,7 +134,7 @@ def Choose_config(choices):
             ),
   ]
   answers = inquirer.prompt(questions)
-  cfg = configparser.ConfigParser()
+  sysconfig = configparser.ConfigParser()
   #print(answers['action'])
   localtime = time.localtime()
   localtime = time.strftime("%Y-%m-%d-%I:%M:%S", localtime)
@@ -142,18 +143,19 @@ def Choose_config(choices):
   f = open(logname,'w+')
   f.write(runingstr)
   f.close()
-  cfg.read("./config/"+answers['action']+".ini")
-  levellist=cfg.sections()
+  sysconfig.read("./config/"+answers['action']+".ini")
+  levellist=sysconfig.sections()
   levellist.remove("ComityRT")
   for level in levellist: 
     WorkQueue[level]=dict()
     WorkQueue[level]['status']=0
     WorkQueue[level]['Queue']=list()
  
-  return cfg['ComityRT']['Workload_Name']
+  return sysconfig['ComityRT']['Workload_Name']
 def SystemTimeStart():
    global settime
    global config
+   global sysconfig
    timeprint=""
    #for name in config.sections():
    #  tp1=threading.Thread(target=TimeStart,args=(name,))
@@ -161,6 +163,9 @@ def SystemTimeStart():
    while(1):
      time.sleep(1)
      settime=settime+1
+     if sysconfig['ComityRT']['Scheduleability_analysis']=="EDF":
+       priority_method(config,"EDF")
+       #WorkSort(config)
      s=0
      m=0
      if settime>60:
@@ -393,6 +398,7 @@ def WorkSort(config):
       #for wname in Wtemp:
         #print(level+":"+wname+":"+config[wname]['priority'])
 def priority_method(config,Ch):
+  global settime
   if Ch=="RM":
     Wtemp=config.sections()
     for i in range(len(Wtemp)):
@@ -409,7 +415,23 @@ def priority_method(config,Ch):
         length=length-1
       for wname in Wtemp:
         print(wname+":"+config[wname]['priority'])
-
+  
+  if Ch=="EDF":
+    Wtemp=config.sections()
+    for i in range(len(Wtemp)):
+      for j in range(i):
+        aa=int(config[Wtemp[i]]['nextstart'])-settime
+        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        if aa > bb :
+          temp=Wtemp[i]
+          Wtemp[i]=Wtemp[j]
+          Wtemp[j]=temp
+      length=len(Wtemp)
+      for wname in Wtemp:
+        config[wname]['priority']=str(length)
+        length=length-1
+      #for wname in Wtemp:
+      #  print(wname+":"+config[wname]['priority'])
 
 def read_config(workloadname):
     global config
@@ -462,7 +484,7 @@ def Check_Work():
   for name in config.sections():
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
       #   KillWork(name)
-
+        #WorkSort(config)   
       if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
         #WorkQueue[config[name]['level']]['Queue'].append(name)
 
@@ -650,10 +672,10 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     stdscr.clrtoeol()
     stdscr.move(32,0)
     stdscr.clrtoeol()
-    stdscr.addstr(29,0,config['work2']['runtime']+" status "+config['work2']['status'],curses.A_BOLD)
-    stdscr.addstr(30,0,config['work3']['runtime']+" status "+config['work3']['status'],curses.A_BOLD)
-    stdscr.addstr(31,0,config['work4']['runtime']+" status "+config['work4']['status'],curses.A_BOLD)
-    stdscr.addstr(32,0,config['work5']['runtime']+" status "+config['work5']['status'],curses.A_BOLD)
+    stdscr.addstr(29,0,config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority'],curses.A_BOLD)
+    stdscr.addstr(30,0,config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
+    #stdscr.addstr(31,0,config['work4']['runtime']+" status "+config['work4']['status'],curses.A_BOLD)
+    #stdscr.addstr(32,0,config['work5']['runtime']+" status "+config['work5']['status'],curses.A_BOLD)
 
     #s=0
     #m=0
