@@ -15,7 +15,7 @@ from configobj import ConfigObj
 
 Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
 
-Config_ConList=["Level_MaxNum_Cores_Limit","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Back"]
+Config_ConList=["Level_MaxNum_Cores_Limit","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
 
 Criticality_Name =""
 
@@ -482,7 +482,8 @@ def View_parameters(fname):
                        "Sub_Level",
                        "Level_Use_Cores",
                        "Level_Cores_Weights",
-                       "Level_Memory_Limit"
+                       "Level_Memory_Limit",
+                       "Level_Priority_Mode",
                      ]
 
   configpath='./config/'+fname

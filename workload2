@@ -1,23 +1,23 @@
 [work1]
-level=L1_2
-c=60
+level=test
+test=60
 t=70
 a=0
 
 [work2]
-level=L1_2
-c=60
+level=test
+test=60
 t=70
 a=5
 
 [work3]
-level=L1_2
-c=60
+level=test
+test=60
 t=70
 a=3
 
 [work4]
-level=L1_2
-c=60
+level=test
+test=60
 t=70
 a=0
