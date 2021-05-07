@@ -13,7 +13,7 @@ from configobj import ConfigObj
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Priority_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
 
 Config_ConList=["Level_MaxNum_Cores_Limit","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
 
@@ -31,7 +31,7 @@ Workload_Name =""
 
 Execution_Level_Mode =""
 
-Priority_Mode =""
+Change_Level_Mode =""
 
 Scheduleability_analysis =""
 
@@ -388,7 +388,7 @@ def Load_config():
       global System_MaxNum_Cores_Limit
       global Workload_Name
       global Execution_Level_Mode
-      global Priority_Mode
+      global Change_Level_Mode
       global Scheduleability_analysis
 
       #Criticality_Name = config.get('ComityRT' , 'Criticality_Name').split()
@@ -411,7 +411,7 @@ def Load_config():
 
       Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
 
-      Priority_Mode = config['ComityRT']['Priority_Mode']
+      Change_Level_Mode = config['ComityRT']['Change_Level_Mode']
 
       Scheduleability_analysis = config['ComityRT']['Scheduleability_analysis']
   
@@ -457,7 +457,7 @@ def View_parameters(fname):
   tb1.add_row(["System_Use_Cores",System_Use_Cores])
   tb1.add_row(["Workload_Name",Workload_Name])
   tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
-  tb1.add_row(["Priority_Mode",Priority_Mode])
+  tb1.add_row(["Change_Level_Mode",Change_Level_Mode])
   tb1.add_row(["Scheduleability_analysis",Scheduleability_analysis])
   tb1.align="l"
   print(tb1) 

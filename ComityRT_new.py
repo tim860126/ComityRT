@@ -58,10 +58,14 @@ def ChangeLevel(wname,level,chlevel):
   Schedule()
 
 def FindPid(wname):
-  global config
-  c=subprocess.check_output(['pidof',wname])
-  c=c.decode('utf-8').split("\n")[0]
-  config[wname]['pid']=c
+  global config 
+  try:
+    c=subprocess.check_output(['pidof',wname])
+    c=c.decode('utf-8').split("\n")[0]
+    config[wname]['pid']=c
+    return "true"
+  except:
+    return "false"
 
 def ContWork(wname):
   global WorkQueue
@@ -84,21 +88,35 @@ def ContWork(wname):
 def KillWork(wname):
   global workQueue
   global config
-  FindPid(wname)
-  #WorkQueue[config[wname]['level']]['status']=0
-  config[wname]['status']="0"
-  #os.system("kill -9 "+str(pid))
-  WorkQueue[config[wname]['level']]['status']=0
-  WorkQueue[config[wname]['level']]['run']=""
-  config[wname]['runtime']="0"
-  #os.system("kill -9 $(pidof "+wname+")")
-  os.system("kill -9 "+config[wname]['pid'])
-  worklog="Kill {name} in {level}\n".format(name=wname,level=config[wname]['level'])
-  WriteLog(worklog)
-  stdscr.move(int(config[wname]['statuspr']),0)
-  stdscr.clrtoeol()
-  stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" kill "+config[wname]['status'],curses.A_BOLD)
-  #os.system("docker exec "+config[wname]['level']+" kill -9 $(pidof "+wname+")")
+
+  ck=FindPid(wname)
+  if ck=="true":
+    #WorkQueue[config[wname]['level']]['status']=0
+    config[wname]['status']="0"
+    #os.system("kill -9 "+str(pid))
+    WorkQueue[config[wname]['level']]['status']=0
+    WorkQueue[config[wname]['level']]['run']=""
+    config[wname]['runtime']="0"
+    #os.system("kill -9 $(pidof "+wname+")")
+    os.system("kill -9 "+config[wname]['pid'])
+    worklog="Kill {name} in {level}\n".format(name=wname,level=config[wname]['level'])
+    WriteLog(worklog)
+    stdscr.move(int(config[wname]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" kill "+config[wname]['status'],curses.A_BOLD)
+    #os.system("docker exec "+config[wname]['level']+" kill -9 $(pidof "+wname+")")
+  else:
+    config[wname]['status']="0"
+    #os.system("kill -9 "+str(pid))
+    WorkQueue[config[wname]['level']]['status']=0
+    WorkQueue[config[wname]['level']]['run']=""
+    config[wname]['runtime']="0"
+    worklog="Kill error {name} in {level}\n".format(name=wname,level=config[wname]['level'])
+    WriteLog(worklog)
+    stdscr.move(int(config[wname]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" kill "+config[wname]['status'],curses.A_BOLD)
+
 def StopWork(wname):
   global WorkQueue
   global config
@@ -192,7 +210,7 @@ def SystemTimeStart():
          config[name]['runtime']=str(int(config[name]['runtime'])+1)
          stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
      #for name in config.sections():
-       if config[name]['runtime']==config[name][config[name]['level']]:
+       if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
            level=config[name]['level']
            pst=levellist.index(config[name]['level'])
            if pst+1<=len(levellist)-1:
@@ -404,7 +422,43 @@ def WorkSort(config):
       #for wname in Wtemp:
         #print(level+":"+wname+":"+config[wname]['priority'])
 
-  
+def fd():
+  for level in WorkQueue:
+    priority_mod(config,sysconfig[level]['Level_Priority_Mode'],level)
+ 
+def priority_mod(config,Ch,level):
+  Wtemp=WorkQueue[level]['Queue'].copy()
+  if WorkQueue[level]['run']!="":
+    Wtemp.append(WorkQueue[level]['run'])
+  if Ch=="RM":
+    for i in range(len(Wtemp)):
+      for j in range(i):
+        aa=int(config[Wtemp[j]]['t'])
+        bb=int(config[Wtemp[i]]['t'])
+        if aa > bb :
+          temp=Wtemp[j]
+          Wtemp[j]=Wtemp[i]
+          Wtemp[i]=temp
+      length=len(Wtemp)
+      for wname in Wtemp:
+        config[wname]['priority']=str(length)
+        length=length-1
+      #for wname in Wtemp:
+      #  print(wname+":"+config[wname]['priority'])
+
+  if Ch=="EDF":
+    for i in range(len(Wtemp)):
+      for j in range(i):
+        aa=int(config[Wtemp[i]]['nextstart'])-settime
+        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        if aa > bb :
+          temp=Wtemp[i]
+          Wtemp[i]=Wtemp[j]
+          Wtemp[j]=temp
+      length=len(Wtemp)
+      for wname in Wtemp:
+        config[wname]['priority']=str(length)
+        length=length-1
 
 def priority_method(config,Ch):
   global settime
@@ -422,8 +476,8 @@ def priority_method(config,Ch):
       for wname in Wtemp:
         config[wname]['priority']=str(length)
         length=length-1
-      for wname in Wtemp:
-        print(wname+":"+config[wname]['priority'])
+      #for wname in Wtemp:
+      #  print(wname+":"+config[wname]['priority'])
   
   if Ch=="EDF":
     Wtemp=config.sections()
@@ -497,9 +551,9 @@ def Check_Work():
         #WorkSort(config)   
       if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
         #WorkQueue[config[name]['level']]['Queue'].append(name)
-	
-        if sysconfig['ComityRT']['Scheduleability_analysis']=="EDF":
-          priority_method(config,"EDF")
+        fd()
+        #if sysconfig['ComityRT']['Scheduleability_analysis']=="EDF":
+          #priority_method(config,"EDF")
         
         if len(WorkQueue[config[name]['level']]['Queue'])>0: #加入的工作優先權向前排
           ch=0
@@ -541,7 +595,7 @@ def Check_Work():
             Preemption(name)
         
         WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
-
+        fd()
         stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
         stdscr.clrtoeol()
         stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
