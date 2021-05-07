@@ -316,7 +316,13 @@ def producer(str123,T,name):
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
-    if WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
+    if sysconfig[level]['Level_Multi_Processing']=="true":
+      for i in range(len(WorkQueue[level]['Queue'])):
+        wname=WorkQueue[level]['Queue'].pop(0)
+        WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
+        Run_Work(wname)
+ 
+    elif WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
       wname=WorkQueue[level]['Queue'].pop(0)
       WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']=wname
