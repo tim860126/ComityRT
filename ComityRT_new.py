@@ -10,6 +10,7 @@ import threading
 import os
 from configobj import ConfigObj
 
+Config_ConList=["Level_Multi_Processing","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode"]
 
 workfolder="./work/"
 
@@ -147,8 +148,10 @@ def Choose_config(choices):
   global sysconfig
   global logname
   global WorkQueue
+  global SubLevel
   global levellist
   WorkQueue={}
+  SubLevel={}
   questions = [
   inquirer.List('action',
                 message="Choose An configuration file",
@@ -176,8 +179,21 @@ def Choose_config(choices):
     WorkQueue[level]=dict()
     WorkQueue[level]['status']=0
     WorkQueue[level]['Queue']=list()
- 
+    WorkQueue[level]['Sub']=list()
+    if sysconfig[level]['Sub_Level']=="true":
+      SubL= sysconfig[level].keys()
+      DelL= Config_ConList.copy()
+      for k in DelL:
+        SubL.remove(k)
+      for SubN in SubL:
+        WorkQueue[level]['Sub'].append(SubN)
+        SubLevel[SubN]=dict()
+        SubLevel[SubN]['status']=0
+        SubLevel[SubN]['run']=""
+        print(SubLevel)
+  #time.sleep(5)
   return sysconfig['ComityRT']['Workload_Name']
+
 def SystemTimeStart():
    global settime
    global config
@@ -320,6 +336,50 @@ def producer(str123,T,name):
     Check_Work()
     Schedule()
 
+def Sub_producer(str123,T,name,level):
+    global config
+    global SubLevel
+    config[name]['status']="1"
+    SubLevel[level]['status']=1
+    SubLevel[level]['run']=name
+    #config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
+    pname="{0:10}".format(name)
+    C="{0:4}".format(config[name]['C'])
+    T="{0:4}".format(config[name]['T'])
+    level2="{0:8}".format(level)
+    worklog="Run {name} in {level} excution {C} period {T}\n".format(name=pname,level=level2,C=C,T=T)
+    WriteLog(worklog)
+    #tp1=threading.Thread(target=TimeStart,args=(name,))
+    #t2=threading.Thread(target=consumer,args=(workname,worklevel,))
+    #tp1.start()
+    config[name]['statusprint']=str123
+    stdscr.move(int(config[name]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[name]['statuspr']),0,str123+" start "+config[name]['status'],curses.A_BOLD)
+    ggg=str123.split()
+    #ggg[0] level ggg[1] ggg[2] ggg[3]
+    #os.system("docker exec "+str123)
+    #por=subprocess.run(["docker", "exec",ggg[0],ggg[1],ggg[2],ggg[3]])
+    por=subprocess.run(["docker", "exec",level,ggg[3]])
+    #if config[name]['status']!="-1":
+    worklog="Finish {name} \n".format(name=name)
+    WriteLog(worklog)
+    config[name]['status']="0"
+    config[name]['runtime']="0"
+    config[name]['c']=config[name][config[name]['orilevel']]
+    SubLevel[level]['status']=0
+    SubLevel[level]['run']=""
+    config[name]['level']=config[name]['orilevel']
+      #if len(WorkQueue[config[name]['level']]['Queue'])>0:
+      #  for qwname in WorkQueue[config[name]['level']]['Queue']:
+      #    if qwname != name:
+      #      config[qwname]['nextstart']=str(int(config[qwname]['nextstart'])+int(config[name]['c']))
+
+    #config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
+    stdscr.addstr(int(config[name]['statuspr']),0,str123+" OK next arrive "+config[name]['nextstart']+" sec "+config[name]['status'],curses.A_BOLD)
+
+
+
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
@@ -340,7 +400,15 @@ def Schedule():
         ContWork(wname)
       else:
         Run_Work(wname)
-
+    
+    if sysconfig[level]['Sub_Level']=="true":
+      for SubL in WorkQueue[level]['Sub']:
+        if SubLevel[SubL]['status']==0 and len(WorkQueue[level]['Queue'])>0:
+          wname=WorkQueue[level]['Queue'].pop(0)
+          #config[wname]['level']=SubL
+          WorkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
+          Sub_Work(wname,SubL)
+          
     stdscr.move(int(WorkQueue[level]['statuspr']),0)
     stdscr.clrtoeol()
     stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
@@ -352,6 +420,9 @@ def RunWork(stdscr):
     stdscr.addstr(int(config[wkname]['workpr'])-5,0,string,curses.A_BOLD)
     try:
       sho=shutil.copy2(workfolder+str(wkname), multifolder+config[wkname]['level']+"/"+str(wkname))
+      if len(WorkQueue[config[wkname]['level']]['Sub'])>0:
+        for SubL in WorkQueue[config[wkname]['level']]['Sub']:
+          jj=shutil.copy2(workfolder+str(wkname), multifolder+SubL+"/"+str(wkname))
     except FileExistsError:
       print("error")
     string2=str(wkname)+" was assigned to '"+sho+"'"
@@ -378,6 +449,12 @@ def Run_Work(wkname):
   workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
   workperiod=config[wkname]['t']
   t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
+  t1.start()
+def Sub_Work(wkname,level):
+  global conifg
+  workstats=str(level)+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(level)+"/"+str(wkname)
+  workperiod=config[wkname]['t']
+  t1=threading.Thread(target=Sub_producer,args=(workstats,workperiod,wkname,level,))
   t1.start()
 
 def Preemption(name):
@@ -441,6 +518,14 @@ def WorkSort(config):
 def fd():
   for level in WorkQueue:
     priority_mod(config,sysconfig[level]['Level_Priority_Mode'],level)
+    for i in range(len(WorkQueue[level]['Queue'])):
+      for j in range(i):
+        aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
+        bb=int(config[WorkQueue[level]['Queue'][i]]['priority'])
+        if aa < bb :
+          temp=WorkQueue[level]['Queue'][j]
+          WorkQueue[level]['Queue'][j]=WorkQueue[level]['Queue'][i]
+          WorkQueue[level]['Queue'][i]=temp
  
 def priority_mod(config,Ch,level):
   Wtemp=WorkQueue[level]['Queue'].copy()
@@ -553,6 +638,7 @@ def read_config(workloadname):
       WorkQueue[level]['run']="" 
       k=k+1
       print(level+" "+sysconfig[level]['Level_Priority_Mode'])
+    
     priority_method(config,"RM")
     WorkSort(config)
     #print(levellist.index("level1"))
@@ -564,6 +650,12 @@ def get_io():
     global cpu_info
     cpu_num=psutil.cpu_count(logical=True)
     cpu_info=psutil.cpu_percent(interval=1,percpu=True)
+
+def Schedule_Analytics():
+  for name in config.sections():
+    print("h") 
+
+
 
 def Check_Work():
   global config
@@ -617,9 +709,9 @@ def Check_Work():
         if WorkQueue[config[name]['level']]['run']!="":
           if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
             Preemption(name)
-        
+        fd() 
         WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
-        fd()
+      
         stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
         stdscr.clrtoeol()
         stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
@@ -666,7 +758,6 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
         gg=gg+str(i)+"   "
       worktime="{0:10}".format("time")+gg
     stdscr.addstr(8,0,worktime,curses.A_BOLD)
-
 
     #stdscr.clear()
     #Start_Work()
