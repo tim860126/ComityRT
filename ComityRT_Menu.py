@@ -15,7 +15,7 @@ from configobj import ConfigObj
 
 Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
 
-Config_ConList=["Level_Multi_Processing=","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
+Config_ConList=["Level_Multi_Processing","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
 
 Criticality_Name =""
 
@@ -117,7 +117,7 @@ def Choose_List():
   elif answers['action']=="(2)Edit system configuration file":
     Edit_config("","")
   elif answers['action']=="(3)System Start":
-    print("3")
+    os.system("python ComityRT_new.py")
   elif answers['action']=="(4)System Stop":
     Stop2Rm()
   elif answers['action']=="(5)View ComityRT Log":
@@ -244,11 +244,12 @@ def Bulid_system():
     for i in range(len(Criticality_Name)):
       Level_Use_Cores=""
       Level_Cores_Weights=Ciritical_container[i]['Level_Cores_Weights']
+      Level_Memory_Limit=Ciritical_container[i]['Level_Memory_Limit']
       for j in range(len(Ciritical_container[i]['Level_Use_Cores'])):
         Level_Use_Cores=Level_Use_Cores+Ciritical_container[i]['Level_Use_Cores'][j]+","
       Level_Use_Cores=Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
       print(Level_Cores_Weights)
-      CreateCMD(Criticality_Name[i],Level_Use_Cores,Level_Cores_Weights)
+      CreateCMD(Criticality_Name[i],Level_Use_Cores,Level_Cores_Weights,Level_Memory_Limit)
       progress = ProgressBar().start()
       t1=threading.Thread(target=dosomework,args=(progress,))
       t1.start()
@@ -265,19 +266,20 @@ def Bulid_system():
         for SubN in SubL:
           Sub_Level_Use_Cores=""
           Sub_Level_Cores_Weights=Ciritical_container[i][SubN]['Level_Cores_Weights']
+          Sub_Level_Memory_Limit=Ciritical_container[i][SubN]['Level_Memory_Limit']
           for j in range(len(Ciritical_container[i][SubN]['Level_Use_Cores'])):
             Sub_Level_Use_Cores=Sub_Level_Use_Cores+Ciritical_container[i][SubN]['Level_Use_Cores'][j]+","
           Sub_Level_Use_Cores=Sub_Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
           #print(Sub_Level_Use_Cores)
           print(Sub_Level_Cores_Weights)
-          CreateCMD(SubN,Sub_Level_Use_Cores,Sub_Level_Cores_Weights)
+          CreateCMD(SubN,Sub_Level_Use_Cores,Sub_Level_Cores_Weights,Level_Memory_Limit)
           progress = ProgressBar().start()
           t1=threading.Thread(target=dosomework,args=(progress,))
           t1.start()
           time.sleep(2)
           print("\n")
           print(SubN+" Complete the build!")
-
+  os.system("python ComityRT_Menu.py")
 def Stop2Rm():
   #config = configparser.ConfigParser()
   #sysconfig =configparser.ConfigParser()
@@ -329,9 +331,9 @@ def dosomework(progress):
     progress.update(int(n/(80-1)*100))
     time.sleep(0.01)
 
-def CreateCMD(Name,CPU_U,weights):
+def CreateCMD(Name,CPU_U,weights,Memory):
   #print(Name+" "+CPU_U)
-  subprocess.run(["sh","CreateDocker.sh",CPU_U,Name,weights])
+  subprocess.run(["sh","CreateDocker.sh",CPU_U,Name,weights,Memory])
 
 def Found_config():
   choices=[]

@@ -97,6 +97,7 @@ def KillWork(wname):
     WorkQueue[config[wname]['level']]['status']=0
     WorkQueue[config[wname]['level']]['run']=""
     config[wname]['runtime']="0"
+    config[wname]['level']=config[wname]['orilevel']
     #os.system("kill -9 $(pidof "+wname+")")
     os.system("kill -9 "+config[wname]['pid'])
     worklog="Kill {name} in {level}\n".format(name=wname,level=config[wname]['level'])
@@ -111,6 +112,7 @@ def KillWork(wname):
     WorkQueue[config[wname]['level']]['status']=0
     WorkQueue[config[wname]['level']]['run']=""
     config[wname]['runtime']="0"
+    config[wname]['level']=config[wname]['orilevel']
     worklog="Kill error {name} in {level}\n".format(name=wname,level=config[wname]['level'])
     WriteLog(worklog)
     stdscr.move(int(config[wname]['statuspr']),0)
@@ -200,7 +202,8 @@ def SystemTimeStart():
        timeprint=str(settime)+" sec"
      
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
-
+     #Check_Work()
+     #Schedule()
      for name in config.sections():
        if(config[name]['status']=="0" or config[name]['status']=="-1"):
          config[name]['print']=config[name]['print']+" "
@@ -209,7 +212,8 @@ def SystemTimeStart():
          config[name]['print']=config[name]['print']+"▄"
          config[name]['runtime']=str(int(config[name]['runtime'])+1)
          stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
-     #for name in config.sections():
+     
+     for name in config.sections():
        if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
            level=config[name]['level']
            pst=levellist.index(config[name]['level'])
@@ -218,8 +222,11 @@ def SystemTimeStart():
              ChangeLevel(name,level,chlevel)
            else:
              ca=1
-       if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
-         KillWork(name)
+       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
+       #  KillWork(name)
+       
+     Check_Work()
+     Schedule()
      stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
 def TimeStart(name):
   global config
@@ -320,7 +327,10 @@ def Schedule():
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
         WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
-        Run_Work(wname)
+        if config[wname]['status']=="-1":
+          ContWork(wname)
+        else:
+          Run_Work(wname)
  
     elif WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
       wname=WorkQueue[level]['Queue'].pop(0)
@@ -509,7 +519,13 @@ def read_config(workloadname):
     config.read(workloadname)
     i=0  
     for name in config.sections():
-       os.system("kill -9 $(pidof "+name+")")
+       #try:
+       #  c=subprocess.check_output(['pidof',name])
+       #  c=c.decode('utf-8').split("\n")[0]
+       #  if not c is None:
+       #    os.system("kill -9 $(pidof "+name+")")
+       #except:
+       #  print("Task all Clear")
        config[name]['c']=config[name][config[name]['level']]
        config[name]['orilevel']=config[name]['level']
        config[name]['runtime']="0"
@@ -536,9 +552,11 @@ def read_config(workloadname):
       WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']="" 
       k=k+1
+      print(level+" "+sysconfig[level]['Level_Priority_Mode'])
     priority_method(config,"RM")
     WorkSort(config)
     #print(levellist.index("level1"))
+    
     time.sleep(5)
 
 def get_io():
@@ -552,8 +570,8 @@ def Check_Work():
   global WorkQueue
   global sysconfig
   for name in config.sections():
-      #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
-      #   KillWork(name)
+      if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
+         KillWork(name)
         #WorkSort(config)   
       if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
         #WorkQueue[config[name]['level']]['Queue'].append(name)
@@ -633,8 +651,8 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
   stdscr.addstr(6,0,"time:"+str(settime)+" sec",curses.A_BOLD)
   tp1=threading.Thread(target=SystemTimeStart,args=())
   tp1.start()
-  #Check_Work()
-  #Schedule()
+  Check_Work()
+  Schedule()
   while (k != ord('q')):
     if int(settime%20)==0 or settime==0:
       p=settime/20
@@ -702,8 +720,8 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #    stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
     #    stdscr.clrtoeol()
     #    stdscr.addstr(int(WorkQueue[config[name]['level']]['statuspr']),0,WorkQueue[config[name]['level']]['print'],curses.A_BOLD)
-    Check_Work()
-    Schedule()
+    #Check_Work()
+    #Schedule()
     
     #for level in WorkQueue:
     #  if WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
@@ -751,14 +769,12 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
 
     #s=0
     #m=0
-    #if settime>60:
-    #  m=settime/60
-    #  s=settime-(60*int(m))
-    #  timeprint=str(int(m))+" min "+str(int(s))+" sec"
-    #else:
-    #  timeprint=str(settime)+" sec"
-    #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
-    stdscr.refresh()
+    if settime>60:
+      m=settime/60
+      s=settime-(60*int(m))
+      timeprint=str(int(m))+" min "+str(int(s))+" sec"
+    else:
+      timeprint=str(settime)+" sec"
     #for name in config.sections():
     #  if(config[name]['status']=="0" or config[name]['status']=="-1"):
     #    config[name]['print']=config[name]['print']+" "
@@ -771,7 +787,6 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
  
   curses.endwin()
   WriteLog("System Running Total {} \n".format(timeprint))
-  raise Exception
 
 cfg = configparser.ConfigParser()
 cfg.read("System.ini")
@@ -779,3 +794,13 @@ choice=cfg.sections()
 workloadname=Choose_config(choice)
 stdscr = curses.initscr()
 main(stdscr,workloadname)
+config = configparser.ConfigParser()
+config.read(workloadname)
+for name in config.sections():
+  try:
+     c=subprocess.check_output(['pidof',name])
+     c=c.decode('utf-8').split("\n")[0]
+     if not c is None:
+       os.system("kill -9 $(pidof "+name+")")
+  except:
+     print("Task all Clear")
