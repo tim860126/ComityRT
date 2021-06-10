@@ -10,7 +10,7 @@ import threading
 import os
 from configobj import ConfigObj
 
-Config_ConList=["Level_Multi_Processing","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode"]
+Config_ConList=["Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode"]
 
 workfolder="./work/"
 
@@ -28,6 +28,32 @@ def WriteLog(string):
   f = open(logname,'a+')
   f.write(localtime+string)
   f.close()
+def Sub_ChangeLevel(wname,level,chlevel):
+  global WorkQueue
+  global config
+  FindPid(wname)
+  StopWork(wname)
+  WorkQueue[level]['Queue'].remove(wname)
+  os.system("./ChangeContainer.sh "+chlevel+" "+config[wname]['pid'])
+  WorkQueue[level]['run']=""
+  config[wname]['c']=config[wname][level]
+  stdscr.move(int(config[wname]['statuspr']),0)
+  stdscr.clrtoeol()
+  stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Change Level "+config[wname]['c']+" "+config[wname]['level'],curses.A_BOLD)
+  #StopWork(wname)
+  #Check_Work()
+  WorkQueue[chlevel]['Queue'].append(wname)
+  LevelSort(chlevel)
+  WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])
+  stdscr.move(int(WorkQueue[level]['statuspr']),0)
+  stdscr.clrtoeol()
+  stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
+  WorkQueue[chlevel]['print']=chlevel+":"+str(WorkQueue[chlevel]['Queue'])+" "+str(WorkQueue[chlevel]['status'])+" "+str(WorkQueue[chlevel]['run']
+  )
+  stdscr.move(int(WorkQueue[chlevel]['statuspr']),0)
+  stdscr.clrtoeol()
+  stdscr.addstr(int(WorkQueue[chlevel]['statuspr']),0,WorkQueue[chlevel]['print'],curses.A_BOLD)
+
  
 def ChangeLevel(wname,level,chlevel):
   global WorkQueue
@@ -39,7 +65,10 @@ def ChangeLevel(wname,level,chlevel):
   WorkQueue[level]['run']=""
   config[wname]['level']=chlevel
   config[wname]['c']=config[wname][chlevel]
-  config[wname]['statusprint']=config[wname]['statusprint'].replace(level,chlevel)
+  if config[wname]['Sub']!="":
+    config[wname]['statusprint']=config[wname]['statusprint'].replace(config[wname]['Sub'],chlevel)
+  else:
+    config[wname]['statusprint']=config[wname]['statusprint'].replace(level,chlevel)
   stdscr.move(int(config[wname]['statuspr']),0)
   stdscr.clrtoeol()
   stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Change Level "+config[wname]['c']+" "+config[wname]['level'],curses.A_BOLD)
@@ -340,6 +369,7 @@ def Sub_producer(str123,T,name,level):
     global config
     global SubLevel
     config[name]['status']="1"
+    config[name]['Sub']=level
     SubLevel[level]['status']=1
     SubLevel[level]['run']=name
     #config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
@@ -367,6 +397,7 @@ def Sub_producer(str123,T,name,level):
     config[name]['status']="0"
     config[name]['runtime']="0"
     config[name]['c']=config[name][config[name]['orilevel']]
+    config[name]['Sub']=""
     SubLevel[level]['status']=0
     SubLevel[level]['run']=""
     config[name]['level']=config[name]['orilevel']
@@ -383,7 +414,7 @@ def Sub_producer(str123,T,name,level):
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
-    if sysconfig[level]['Level_Multi_Processing']=="true":
+    if sysconfig[level]['Level_Priority_Mode']=="CFS":
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
         WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
@@ -406,8 +437,11 @@ def Schedule():
         if SubLevel[SubL]['status']==0 and len(WorkQueue[level]['Queue'])>0:
           wname=WorkQueue[level]['Queue'].pop(0)
           #config[wname]['level']=SubL
-          WorkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
-          Sub_Work(wname,SubL)
+          if config[wname]['status']!="-1":
+            WorkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
+            Sub_Work(wname,SubL)
+          else:       
+            WorkQueue[level]['Queue'].insert(0,wname)
           
     stdscr.move(int(WorkQueue[level]['statuspr']),0)
     stdscr.clrtoeol()
@@ -620,6 +654,7 @@ def read_config(workloadname):
        config[name]['workpr']=str(workprintline+i)
        config[name]['nextstart']=str(config[name]['a'])
        config[name]['priority']="0"
+       config[name]['Sub']=""
        i=i+1    
     j=0
 
@@ -847,14 +882,15 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(8,0,worktime,curses.A_BOLD)
     #stdscr.move(29,0)
     #stdscr.clrtoeol()
-    #stdscr.move(30,0)
-    #stdscr.clrtoeol()
+    stdscr.move(30,0)
+    stdscr.clrtoeol()
     #stdscr.move(31,0)
     #stdscr.clrtoeol()
     #stdscr.move(32,0)
     #stdscr.clrtoeol()
 #    stdscr.addstr(29,0,config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority'],curses.A_BOLD)
-#    stdscr.addstr(30,0,config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
+    stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
+    
     #stdscr.addstr(31,0,config['work4']['runtime']+" status "+config['work4']['status'],curses.A_BOLD)
     #stdscr.addstr(32,0,config['work5']['runtime']+" status "+config['work5']['status'],curses.A_BOLD)
 

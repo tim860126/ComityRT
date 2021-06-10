@@ -15,7 +15,7 @@ from configobj import ConfigObj
 
 Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
 
-Config_ConList=["Level_Multi_Processing","Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
+Config_ConList=["Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
 
 Criticality_Name =""
 
@@ -480,7 +480,6 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
   
   tb1.field_names = ["Criticality_Level",
-                       "Level_MaxNum_Cores",
                        "Sub_Level",
                        "Level_Use_Cores",
                        "Level_Cores_Weights",
@@ -496,7 +495,6 @@ def View_parameters(fname):
     Temp2.append(Criticality_Name[i])
     for j in Temp:
       Temp2.append(Ciritical_container[i][j])  
-    #print(Temp2)
     tb1.add_row(Temp2)
     if config[Criticality_Name[i]]['Sub_Level']=="true":
       SubL= config[Criticality_Name[i]].keys()
@@ -508,6 +506,8 @@ def View_parameters(fname):
         Temp2.append(SubN)
         for j in Temp:
           if j=="Sub_Level":
+            Temp2.append(Criticality_Name[i]+" Sub_Level")
+          elif j=="Level_Priority_Mode":
             Temp2.append(Criticality_Name[i]+" Sub_Level")
           else:
             Temp2.append(config[Criticality_Name[i]][SubN][j])
