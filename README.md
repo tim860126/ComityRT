@@ -8,8 +8,8 @@
 
 #### 提供可視化的介面顯示CPU使用率以及系統工作與關鍵層級佇列運行狀況
 <div align=center>
-<img src="/image/Menu.png" alt="Menu" width="50%"/>
-<img src="/image/Scheduler.png" alt="Scheduler" width="50%"/>
+<img src="/image/Menu.png" alt="Menu" width="75%"/>
+<img src="/image/Scheduler.png" alt="Scheduler" width="75%"/>
 </div>
 
 
