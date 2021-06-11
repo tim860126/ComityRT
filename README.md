@@ -7,9 +7,10 @@
 #### 透過虛擬化技術Docker，我們將Container視為關鍵層級，隔離運行系統工作在其中
 
 #### 提供可視化的介面顯示CPU使用率以及系統工作與關鍵層級佇列運行狀況
-![Menu](/image/Menu.png)
 
-![Scheduler](/image/Scheduler.png)
+<img src="/image/Menu.png" alt="Menu" width="50%"/>
+<img src="/image/Scheduler.png" alt="Scheduler" width="50%"/>
+
 
 
 ## 系統組態檔參數
