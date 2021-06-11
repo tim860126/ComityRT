@@ -43,6 +43,13 @@ ComityRT建置系統的組態檔參數設定說明
 
 ## 系統組態檔範例
 
+```
+vim ./config/ComitRT.ini 建立系統組態檔
+
+python ComitRT_Menu.py 執行ComityRT選單 選擇 Bulid System through configuration 建置系統環境
+
+```
+
 此範例會建立一個雙關鍵層級系統
 
 Level1 配置1.5顆CPU使用量分別指定0與1的CPU編號
@@ -105,3 +112,7 @@ Level_Priority_Mode=EDF
 
 
 ```
+
+
+
+
