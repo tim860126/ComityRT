@@ -17,13 +17,39 @@ ComityRT是一個幫助系統設計人員創建混合關鍵性系統的測試化
 ## 系統組態檔參數
 ComityRT建置系統的組態檔參數設定說明
 
+* Preemption 工作搶占
+
+  ComityRT建置系統環境時，依據組態檔的系統參數`System_Preemption`判斷系統是否允許工作根據優先權的高低進行執行的搶占
+
+* Change_Level_Mode 工作關鍵層級搬移
+
+  我們將容器視為關鍵層級，為了要實現工作關鍵層級的切換或是將工作搬移到其他CPU上等情況(Level1關鍵層級配置了0號CPU、Level2配置了1號CPU，當某一個工作要轉移到1號CPU上運作時，就會透過此模組進行工作的搬移)
+  
+  因應此需求我們實作出一個Change_Level_Mode模組，將容器內正在運作中的工作進行搬移到指定的關鍵層級(也就是此關鍵層級的容器中)
+  
+  根據[Docker Document](https://docs.docker.com/config/containers/runmetrics/) 
+  
+  說明Docker創建容器時會在`/sys/fs/cgroup/memory/system.slice/docker-<longid>.scope/ on cgroup v1, systemd driver`建立相對應的cgroup
+  
+  因此可以透過下列語法容器的名稱查找容器的ID
+  
+  ```
+  docker inspect -f '{{.ID}}' [container_name]
+  ```
+  
+  並將工作PID寫入到對應的容器ID的cgroup所有層級內的Task就完成了容器內的工作搬移
+  
+* Sub_Level 子層級  
+  
+  
 系統主要設定區塊`ComityRT`
 
 | ComitRT                   | 描述 |
-| --------------------------|:-------------:|
+| --------------------------|-------------|
 | num_Criticality_Level     | 關鍵層級數量,若要系統關鍵層級數量為三個則設置3 |
 | Pirority_assignment_method| 預設優先權分配方法 |
 | System_MaxNum_Cores_Limit | 是否限制系統使用CPU數量|
+| System_Preemption			| 允許工作根據優先權進行搶占|
 | System_Use_Cores          | 設置系統使用CPU編號|
 | Workload_Name             | 工作設定檔名稱 |
 | Execution_Level_Mode      | 系統初始運行關鍵層級 |
@@ -33,7 +59,7 @@ ComityRT建置系統的組態檔參數設定說明
 系統關鍵層級區塊`任意名稱`ex: Level1、Level2
 
 | 關鍵層級                  | 描述 |
-| --------------------------|:-------------:|
+| --------------------------|-------------|
 | Sub_Level                 | 允許子層級建立,若父層級有工作等待中將會進入子層級運作 |
 | Level_Use_Cores           | 指定使用CPU編號,若要選擇第一個CPU為編號0,可以設置多CPU如0,1,3|
 | Level_Cores_Weights       | 限制指定CPU使用率,若要使用整顆CPU的量則為1若要一半則為0.5|
