@@ -63,7 +63,7 @@ ComityRT建置系統的組態檔參數設定說明
 | Sub_Level                 | 允許子層級建立,若父層級有工作等待中將會進入子層級運作 |
 | Level_Use_Cores           | 指定使用CPU編號,若要選擇第一個CPU為編號0,可以設置多CPU如0,1,3|
 | Level_Cores_Weights       | 限制指定CPU使用率,若要使用整顆CPU的量則為1若要一半則為0.5|
-| Level_Memory_Limit        | 限制層級Memory使用量,若要限制最多使用500MB 則填入500|
+| Level_Memory_Limit        | 限制層級Memory使用量(以MB為單位),若要限制最多使用500MB 則填入500|
 | Level_Priority_Mode       | 工作排程方法的選用如:RM,EDF,CFS|
 
 子關鍵層級區塊與父關鍵層級參數設定一樣，但無`Sub_Level`與`Level_Priority_Mode`
