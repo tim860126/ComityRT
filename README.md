@@ -141,7 +141,38 @@ Level_Priority_Mode=EDF
 
 
 ```
+## 系統工作檔說明
 
+```
+[work1]      <-工作名稱需與工作執行檔名稱相同
+level=level1 <- 運行的關鍵層級
+c=15		 <- 工作WCET執行時間
+d=20		 <- 工作截限時間
+t=50		 <-	工作週期
+#非必要參數
+[關鍵層級名稱]=[時間]
+level2=15    <-此為工作搬移參數，當工作到達15秒後此工作將會搬移到關鍵層級level2並與依照level2的排程方法與其他工作分配優先權
+```
 
+```
+[work1]
+level=level1
+c=15
+d=20
+t=50
 
+[work2]
+level=level1
+c=15
+d=30
+t=70
+level2=5
+
+[work3]
+level=level2
+c=20
+d=50
+t=70
+
+```
 
