@@ -77,11 +77,11 @@ python ComitRT_Menu.py 執行ComityRT選單 選擇 Bulid System through configur
 
 ```
 
-此範例會建立一個雙關鍵層級系統
+此範例會建立一個雙關鍵層級可搶占式系統
 
-Level1 配置1.5顆CPU使用量分別指定0與1的CPU編號
+Level1 配置1.5顆CPU使用量分別指定0與1的CPU編號以及500MB記憶體使用量限制，運行的工作會依照RM排程方法分配優先權
 
-Level2 配置1.2顆CPU使用量分別指定1與2的CPU編號 
+Level2 配置1.2顆CPU使用量分別指定1與2的CPU編號以及300MB記憶體使用量限制，運行的工作會依照EDF排程方法分配優先權
 
 ```
 [ComityRT]
@@ -89,7 +89,9 @@ num_Criticality_Level = 2
 
 Pirority_assignment_method =SMC
 
-System_MaxNum_Cores_Limit = True
+System_MaxNum_Cores_Limit = true
+
+System_Preemption = true
 
 System_Use_Cores=0,1,2,3
 
@@ -126,7 +128,7 @@ Level_Use_Cores=1
 
 Level_Cores_Weights=0.5
 
-Level_Memory_Limit=3000
+Level_Memory_Limit=300
 
 Level_Priority_Mode=EDF
 
