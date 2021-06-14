@@ -172,6 +172,8 @@ c=15
 d=30
 t=70
 level2=5
+level3=10
+level1=12
 
 [work3]
 level=level2
