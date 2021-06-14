@@ -113,35 +113,41 @@ def SubContWork(wname,level):
   global WorkQueue
   global config
   FindPid(wname)
-  #os.system("./ContWork.sh "+wname);
-  SubLevel[level]['status']=1
-  SubLevel[level]['run']=wname
-  config[wname]['status']="1"
-  #os.system("kill -CONT $(pidof "+wname+")")
-  os.system("kill -CONT "+config[wname]['pid'])
-  worklog="Cont Sub {name} in {level}\n".format(name=wname,level=level)
-  WriteLog(worklog)
-  config[wname]['statusprint']=config[wname]['statusprint'].replace(config[wname]['level'],level)
-  stdscr.move(int(config[wname]['statuspr']),0)
-  stdscr.clrtoeol()
-  stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Cont "+config[wname]['status'],curses.A_BOLD)
+  c=subprocess.check_output(['./StopWorkPID.sh',config[wname]['pid']])
+  msg=c.decode('utf-8').split("\n")[0]
+  if msg=="True":
+    #os.system("./ContWork.sh "+wname);
+    SubLevel[level]['status']=1
+    SubLevel[level]['run']=wname
+    config[wname]['status']="1"
+    #os.system("kill -CONT $(pidof "+wname+")")
+    #os.system("kill -CONT "+config[wname]['pid'])
+    worklog="Cont Sub {name} in {level}\n".format(name=wname,level=level)
+    WriteLog(worklog)
+    config[wname]['statusprint']=config[wname]['statusprint'].replace(config[wname]['level'],level)
+    stdscr.move(int(config[wname]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Cont "+config[wname]['status'],curses.A_BOLD)
 
 
 def ContWork(wname):
   global WorkQueue
   global config
   FindPid(wname)
-  #os.system("./ContWork.sh "+wname);
-  WorkQueue[config[wname]['level']]['status']=1 
-  WorkQueue[config[wname]['level']]['run']=wname
-  config[wname]['status']="1"
-  #os.system("kill -CONT $(pidof "+wname+")")
-  os.system("kill -CONT "+config[wname]['pid'])
-  worklog="Cont {name} in {level}\n".format(name=wname,level=config[wname]['level'])
-  WriteLog(worklog)
-  stdscr.move(int(config[wname]['statuspr']),0)
-  stdscr.clrtoeol()
-  stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Cont "+config[wname]['status'],curses.A_BOLD)
+  c=subprocess.check_output(['./ContWorkPID.sh',config[wname]['pid']])
+  msg=c.decode('utf-8').split("\n")[0]
+  if msg=="True":
+    #os.system("./ContWork.sh "+wname);
+    WorkQueue[config[wname]['level']]['status']=1 
+    WorkQueue[config[wname]['level']]['run']=wname
+    config[wname]['status']="1"
+    #os.system("kill -CONT $(pidof "+wname+")")
+    #os.system("kill -CONT "+config[wname]['pid'])
+    worklog="Cont {name} in {level}\n".format(name=wname,level=config[wname]['level'])
+    WriteLog(worklog)
+    stdscr.move(int(config[wname]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Cont "+config[wname]['status'],curses.A_BOLD)
 
   #os.system("kill -CONT "+str(pid))
   #os.system("docker exec "+config[wname]['level']+" kill -CONT $(pidof "+wname+")")
@@ -197,16 +203,19 @@ def Sub_StopWork(wname):
   global WorkQueue
   global config
   FindPid(wname)
-  os.system("kill -STOP "+config[wname]['pid'])
-  worklog="Stop Sub {name} in {level}\n".format(name=wname,level=config[wname]['Sub'])
-  WriteLog(worklog)
-  #os.system("./StopWork.sh "+wname);
-  SubLevel[config[wname]['Sub']]['status']=0 #佇列旗標進程更改為空閒
-  SubLevel[config[wname]['Sub']]['run']=""#重新加入到佇列中
-  config[wname]['status']="-1" #工作狀態顯示為暫停
-  stdscr.move(int(config[wname]['statuspr']),0)
-  stdscr.clrtoeol()
-  stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" stop "+config[wname]['status'],curses.A_BOLD)
+  c=subprocess.check_output(['./StopWorkPID.sh',config[wname]['pid']])
+  msg=c.decode('utf-8').split("\n")[0]
+  if msg=="True":
+    #os.system("kill -STOP "+config[wname]['pid'])
+    worklog="Stop Sub {name} in {level}\n".format(name=wname,level=config[wname]['Sub'])
+    WriteLog(worklog)
+    #os.system("./StopWork.sh "+wname);
+    SubLevel[config[wname]['Sub']]['status']=0 #佇列旗標進程更改為空閒
+    SubLevel[config[wname]['Sub']]['run']=""#重新加入到佇列中
+    config[wname]['status']="-1" #工作狀態顯示為暫停
+    stdscr.move(int(config[wname]['statuspr']),0)
+    stdscr.clrtoeol()
+    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" stop "+config[wname]['status'],curses.A_BOLD)
 
 def StopWork(wname):
   global WorkQueue
@@ -216,16 +225,19 @@ def StopWork(wname):
   #print(c)
   if config[wname]['status']!=100:
     #os.system("kill -STOP $(pidof "+wname+")")
-    os.system("kill -STOP "+config[wname]['pid'])
-    worklog="Stop {name} in {level}\n".format(name=wname,level=config[wname]['level'])
-    WriteLog(worklog)
-    #os.system("./StopWork.sh "+wname);
-    WorkQueue[config[wname]['level']]['status']=0 #佇列旗標進程更改為空閒
-    WorkQueue[config[wname]['level']]['Queue'].append(wname)#重新加入到佇列中
-    config[wname]['status']="-1" #工作狀態顯示為暫停
-    stdscr.move(int(config[wname]['statuspr']),0)
-    stdscr.clrtoeol()
-    stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" stop "+config[wname]['status'],curses.A_BOLD)
+    #os.system("kill -STOP "+config[wname]['pid'])
+    c=subprocess.check_output(['./StopWorkPID.sh',config[wname]['pid']])
+    msg=c.decode('utf-8').split("\n")[0]
+    if msg=="True":
+      worklog="Stop {name} in {level}\n".format(name=wname,level=config[wname]['level'])
+      WriteLog(worklog)
+      #os.system("./StopWork.sh "+wname);
+      WorkQueue[config[wname]['level']]['status']=0 #佇列旗標進程更改為空閒
+      WorkQueue[config[wname]['level']]['Queue'].append(wname)#重新加入到佇列中
+      config[wname]['status']="-1" #工作狀態顯示為暫停
+      stdscr.move(int(config[wname]['statuspr']),0)
+      stdscr.clrtoeol()
+      stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" stop "+config[wname]['status'],curses.A_BOLD)
 
   #os.system("docker exec "+config[wname]['level']+" kill -STOP $(pidof "+wname+")")
   #os.system("kill -STOP "+str(c))
@@ -417,7 +429,7 @@ def producer(str123,T,name):
     if config[name]['Kill']!="1":
       config[name]['status']="0"
       config[name]['runtime']="0"
-      config[name]['c']=config[name][config[name]['orilevel']]
+      #config[name]['c']=config[name][config[name]['orilevel']]
       config[name]['priority']="0"
       WorkQueue[config[name]['level']]['status']=0
       WorkQueue[config[name]['level']]['run']=""
@@ -480,11 +492,16 @@ def Sub_producer(str123,T,name,level):
     if config[name]['Kill']!="1":
       config[name]['status']="0"
       config[name]['runtime']="0"
-      config[name]['c']=config[name][config[name]['orilevel']]
+      #config[name]['c']=config[name][config[name]['orilevel']]
       config[name]['Sub']=""
       config[name]['priority']="0"
-      SubLevel[level]['status']=0
-      SubLevel[level]['run']=""
+      if config[name]['Sub']=="":
+        if WorkQueue[config[name]['level']]['run']==name:
+          WorkQueue[config[name]['level']]['run']=""
+          WorkQueue[config[name]['level']]['status']=0
+      else:
+        SubLevel[config[name]['Sub']]['status']=0
+        SubLevel[config[name]['Sub']]['run']=""
       config[name]['level']=config[name]['orilevel']
       config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
       #if len(WorkQueue[config[name]['level']]['Queue'])>0:
@@ -933,7 +950,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority']+" "+config['work2']['runtime'],curses.A_BOLD)
     stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
     
-    stdscr.addstr(31,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['Sub'],curses.A_BOLD)
+    stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
     #stdscr.addstr(32,0,"wwwww"+WorkQueue['level3']['run'],curses.A_BOLD)
 
     #s=0

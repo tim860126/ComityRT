@@ -6,4 +6,7 @@ import subprocess
 #except:
 #  print("none")
 
-os.system("kill -9 12345 > /dev/null 2>&1")
+c=subprocess.check_output(['./StopWorkPID.sh','12345'])
+msg=c.decode('utf-8').split("\n")[0]
+print(msg)
+
