@@ -26,15 +26,17 @@ def WriteLog(string):
   localtime = time.localtime()
   localtime = time.strftime("%I:%M:%S ", localtime)
   f = open(logname,'a+')
-  f.write(localtime+string)
+  f.write(str(settime)+" "+string)
   f.close()
 
 def ContChangeLevel(wname,chlevel):
   global WorkQueue
   global config
   FindPid(wname)
+  config[wname]['Sub']=chlevel
+  if wname in WorkQueue[config[wname]['level']]['Queue']: 
+    WorkQueue[config[wname]['level']]['Queue'].remove(wname)
   os.system("./ChangeContainer.sh "+chlevel+" "+config[wname]['pid'])
-  
 
 def SubChangeLevel(wname,level,chlevel):
   global WorkQueue
@@ -43,9 +45,11 @@ def SubChangeLevel(wname,level,chlevel):
   Sub_StopWork(wname)
   os.system("./ChangeContainer.sh "+chlevel+" "+config[wname]['pid'])
   config[wname]['level']=chlevel
-  config[wname]['c']=config[wname][chlevel]
+  #config[wname]['c']=config[wname][chlevel]
   config[wname]['statusprint']=config[wname]['statusprint'].replace(config[wname]['Sub'],chlevel)
   config[wname]['Sub']=""
+  worklog="SubChange {name} in {level}\n".format(name=wname,level=chlevel)
+  WriteLog(worklog)
   stdscr.move(int(config[wname]['statuspr']),0)
   stdscr.clrtoeol()
   stdscr.addstr(int(config[wname]['statuspr']),0,config[wname]['statusprint']+" Change Level "+config[wname]['c']+" "+config[wname]['level'],curses.A_BOLD)
@@ -67,11 +71,15 @@ def ChangeLevel(wname,level,chlevel):
   global config
   FindPid(wname)
   StopWork(wname)
-  WorkQueue[level]['Queue'].remove(wname)
+  if wname in WorkQueue[level]['Queue']:
+    WorkQueue[level]['Queue'].remove(wname)
   os.system("./ChangeContainer.sh "+chlevel+" "+config[wname]['pid'])
-  WorkQueue[level]['run']=""
+  if WorkQueue[level]['run']==wname:
+    WorkQueue[level]['run']=""
   config[wname]['level']=chlevel
-  config[wname]['c']=config[wname][chlevel]
+  worklog="Change {name} in {level}\n".format(name=wname,level=chlevel)
+  WriteLog(worklog)
+  #config[wname]['c']=config[wname][chlevel]
   config[wname]['statusprint']=config[wname]['statusprint'].replace(level,chlevel)
   stdscr.move(int(config[wname]['statuspr']),0)
   stdscr.clrtoeol()
@@ -158,7 +166,7 @@ def KillWork(wname):
     config[wname]['runtime']="0"
     config[wname]['priority']="0"
     config[wname]['d']=str(int(config[wname]['d'])+int(config[wname]['d']))
-    config[wname]['C']=config[wname][config[wname]['orilevel']]
+    #config[wname]['C']=config[wname][config[wname]['orilevel']]
     config[wname]['Kill']="1"
     #os.system("kill -9 $(pidof "+wname+")")
     os.system("kill -9 "+config[wname]['pid'])
@@ -190,7 +198,7 @@ def Sub_StopWork(wname):
   global config
   FindPid(wname)
   os.system("kill -STOP "+config[wname]['pid'])
-  worklog="Stop {name} in {level}\n".format(name=wname,level=config[wname]['Sub'])
+  worklog="Stop Sub {name} in {level}\n".format(name=wname,level=config[wname]['Sub'])
   WriteLog(worklog)
   #os.system("./StopWork.sh "+wname);
   SubLevel[config[wname]['Sub']]['status']=0 #佇列旗標進程更改為空閒
@@ -255,6 +263,7 @@ def Choose_config(choices):
   levellist = sysconfig.keys()
   levellist.remove("ComityRT")
   
+  #WorkQueue 初始化
   for level in levellist: 
     WorkQueue[level]=dict()
     WorkQueue[level]['status']=0
@@ -304,6 +313,7 @@ def SystemTimeStart():
        if(config[name]['status']=="0" or config[name]['status']=="-1"):
          config[name]['print']=config[name]['print']+" "
          stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
+         #config[name]['runtime']=str(int(config[name]['runtime'])+1)
        elif config[name]['status']=="1":
          config[name]['print']=config[name]['print']+"▄"
          config[name]['runtime']=str(int(config[name]['runtime'])+1)
@@ -313,18 +323,28 @@ def SystemTimeStart():
        if config[name]['d']==str(settime):
          KillWork(name) 
      
-     for name in config.sections():
-       if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
-           level=config[name]['level']
-           pst=levellist.index(config[name]['level'])
-           if pst+1<=len(levellist)-1:
-             chlevel=levellist[pst+1]
-             if config[name]['Sub']=="":
-               ChangeLevel(name,level,chlevel)
-             else:
-               SubChangeLevel(name,level,chlevel)
-           else:
-             ca=1
+     if sysconfig['ComityRT']['Change_Level_Mode']=="true":
+       for name in config.sections():
+         for chlevel in WorkQueue:
+           if chlevel in config[name]:
+             if config[name]['runtime']==config[name][chlevel] and config[name]['level']!=chlevel:
+               level=config[name]['level']
+               if config[name]['Sub']=="":
+                 ChangeLevel(name,level,chlevel)
+               else:
+                 SubChangeLevel(name,level,chlevel)
+     #for name in config.sections():
+     #  if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
+     #      level=config[name]['level']
+     #      pst=levellist.index(config[name]['level'])
+     #      if pst+1<=len(levellist)-1:
+     #        chlevel=levellist[pst+1]
+     #        if config[name]['Sub']=="":
+     #          ChangeLevel(name,level,chlevel)
+     #        else:
+     #          SubChangeLevel(name,level,chlevel)
+     #      else:
+     #        ca=1
        #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
        #  KillWork(name)
        
@@ -509,8 +529,8 @@ def Schedule():
           elif config[wname]['status']=="-1":
             ContChangeLevel(wname,SubL)
             SubContWork(wname,SubL)
-          else:       
-            WorkQueue[level]['Queue'].insert(0,wname)
+          #else:       
+          #  WorkQueue[level]['Queue'].insert(0,wname)
           
     stdscr.move(int(WorkQueue[level]['statuspr']),0)
     stdscr.clrtoeol()
@@ -716,7 +736,8 @@ def read_config(workloadname):
        #    os.system("kill -9 $(pidof "+name+")")
        #except:
        #  print("Task all Clear")
-       config[name]['c']=config[name][config[name]['level']]
+       #config[name]['c']=config[name][config[name]['level']]
+       config[name]['c']=config[name]['c']
        config[name]['d']=config[name]['d']
        config[name]['orilevel']=config[name]['level']
        config[name]['runtime']="0"
@@ -825,6 +846,8 @@ def Check_Work():
             fd()
             if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
               print("www"+name)
+              worklog="{name} Preemption {name2}\n".format(name=name,name2=WorkQueue[config[name]['level']]['run'])
+              WriteLog(worklog)
               Preemption(name)
       fd() 
       WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
@@ -907,10 +930,10 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     stdscr.clrtoeol()
     stdscr.move(32,0)
     stdscr.clrtoeol()
-    stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority'],curses.A_BOLD)
+    stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority']+" "+config['work2']['runtime'],curses.A_BOLD)
     stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
     
-    stdscr.addstr(31,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority'],curses.A_BOLD)
+    stdscr.addstr(31,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['Sub'],curses.A_BOLD)
     #stdscr.addstr(32,0,"wwwww"+WorkQueue['level3']['run'],curses.A_BOLD)
 
     #s=0
