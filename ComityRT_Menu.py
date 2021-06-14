@@ -13,7 +13,7 @@ from configobj import ConfigObj
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
+Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_Preemption","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
 
 Config_ConList=["Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
 
@@ -24,6 +24,8 @@ System_MaxNum_Cores_Limit=""
 System_Use_Cores =""
 
 num_Criticality_Level =""
+
+System_Preemption =""
 
 Pirority_assignment_method =""
 
@@ -386,6 +388,7 @@ def Load_config():
       global Criticality_Name
       global System_Use_Cores
       global num_Criticality_Level
+      global System_Preemption
       global Pirority_assignment_method
       global System_MaxNum_Cores_Limit
       global Workload_Name
@@ -404,6 +407,8 @@ def Load_config():
       System_Use_Cores = config['ComityRT']['System_Use_Cores']
     
       num_Criticality_Level=config['ComityRT']['num_Criticality_Level']
+
+      System_Preemption=config['ComityRT']['System_Preemption']
 
       Pirority_assignment_method =config['ComityRT']['Pirority_assignment_method']
 
@@ -453,6 +458,7 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
   tb1.field_names = ["Parameter",fname]
   tb1.add_row(["num_Criticality_Level",num_Criticality_Level])
+  tb1.add_row(["System_Preemption",System_Preemption])
   #tb1.add_row(["Criticality_Name",Criticality_Name])
   tb1.add_row(["Pirority_assignment_method",Pirority_assignment_method])
   tb1.add_row(["System_MaxNum_Cores_Limit",System_MaxNum_Cores_Limit])

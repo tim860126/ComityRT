@@ -818,12 +818,14 @@ def Check_Work():
           #Preemption(name)
         
         config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
-   
-      if WorkQueue[config[name]['level']]['run']!="":
-        if name in WorkQueue[config[name]['level']]['Queue']:       
-          if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
-            print("www"+name)
-            Preemption(name)
+      
+      if sysconfig['ComityRT']['System_Preemption']=="true" or sysconfig['ComityRT']['System_Preemption']=="True":
+        if WorkQueue[config[name]['level']]['run']!="":
+          if name in WorkQueue[config[name]['level']]['Queue']:       
+            fd()
+            if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
+              print("www"+name)
+              Preemption(name)
       fd() 
       WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
       
