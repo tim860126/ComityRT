@@ -333,6 +333,7 @@ def SystemTimeStart():
      
      for name in config.sections():
        if config[name]['d']==str(settime):
+         config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
          KillWork(name) 
      
      if sysconfig['ComityRT']['Change_Level_Mode']=="true":
@@ -434,7 +435,7 @@ def producer(str123,T,name):
       WorkQueue[config[name]['level']]['status']=0
       WorkQueue[config[name]['level']]['run']=""
       config[name]['level']=config[name]['orilevel']
-      config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
+      #config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
       #if len(WorkQueue[config[name]['level']]['Queue'])>0:
       #  for qwname in WorkQueue[config[name]['level']]['Queue']:
       #    if qwname != name:
@@ -503,7 +504,7 @@ def Sub_producer(str123,T,name,level):
         SubLevel[config[name]['Sub']]['status']=0
         SubLevel[config[name]['Sub']]['run']=""
       config[name]['level']=config[name]['orilevel']
-      config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
+      #config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
       #if len(WorkQueue[config[name]['level']]['Queue'])>0:
       #  for qwname in WorkQueue[config[name]['level']]['Queue']:
       #    if qwname != name:
@@ -521,7 +522,7 @@ def Schedule():
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
         WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
-        if config[wname]['status']=="-1":
+        if config[wname]['status']=="-1": #判斷工作是否是暫停還是尚未執行
           ContWork(wname)
         else:
           Run_Work(wname)
@@ -535,15 +536,16 @@ def Schedule():
       else:
         Run_Work(wname)
     
+    #若有Sub_Level 則會將佇列中的工作搬移到空閒的Sub_Level
     if sysconfig[level]['Sub_Level']=="true":
       for SubL in WorkQueue[level]['Sub']:
         if SubLevel[SubL]['status']==0 and len(WorkQueue[level]['Queue'])>0:
           wname=WorkQueue[level]['Queue'].pop(0)
           #config[wname]['level']=SubL
-          if config[wname]['status']=="0":
+          if config[wname]['status']=="0":   #工作尚未在任何容器下執行
             WorkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
             Sub_Work(wname,SubL)
-          elif config[wname]['status']=="-1":
+          elif config[wname]['status']=="-1": #工作在其他容器內執行了 所以要進行工作搬移
             ContChangeLevel(wname,SubL)
             SubContWork(wname,SubL)
           #else:       
@@ -586,7 +588,8 @@ def Start_Work():
 
 def Run_Work(wkname):
   global conifg
-  workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
+  config[wkname]['level']=config[wkname]['orilevel']
+  workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['orilevel'])+"/"+str(wkname)
   workperiod=config[wkname]['t']
   t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
   t1.start()
@@ -746,13 +749,13 @@ def read_config(workloadname):
     config.read(workloadname)
     i=0  
     for name in config.sections():
-       #try:
-       #  c=subprocess.check_output(['pidof',name])
-       #  c=c.decode('utf-8').split("\n")[0]
-       #  if not c is None:
-       #    os.system("kill -9 $(pidof "+name+")")
-       #except:
-       #  print("Task all Clear")
+       try:
+         c=subprocess.check_output(['pidof',name])
+         c=c.decode('utf-8').split("\n")[0]
+         if not c is None:
+           os.system("kill -9 $(pidof "+name+")")
+       except:
+         ca=1
        #config[name]['c']=config[name][config[name]['level']]
        config[name]['c']=config[name]['c']
        config[name]['d']=config[name]['d']
