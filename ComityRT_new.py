@@ -20,7 +20,34 @@ logfolder="./logs/"
 
 workprintline=9
 
+def AL():
+  
+  for level in WorkQueue:
+    Wtemp=WorkQueue[level]['Queue'].copy()
+    if WorkQueue[level]['run']!="":
+      Wtemp.append(WorkQueue[level]['run'])
+    for name in Wtemp:
+      exc=0
+      exc=exc+int(config[name]['c'])-int(config[name]['runtime'])
+      Wtemp2=Wtemp.copy()
+      Wtemp2.remove(name)
+      for name2 in Wtemp:
+        if config[name]['priority'] < config[name2]['priority']:
+          exc=exc+int(config[name2]['c'])-int(config[name2]['runtime'])
+          #worklog="{name} {name2} {p} {p2}\n".format(name=str(Wtemp2),name2=name, p=str(config[name]['priority']),p2=str(config[name2]['priority']))
+          #WriteAL(worklog)
+      nowEnd=settime+exc
+      if nowEnd > int(config[name]['d']):
+        worklog="{name} MissDeadline It FINSH {Time} Not {D} in {level}\n".format(name=name,level=level,Time=nowEnd,D=config[name]['d'])
+        WriteAL(worklog)
+          
 
+def WriteAL(string):
+  localtime = time.localtime()
+  localtime = time.strftime("%I:%M:%S ", localtime)
+  f = open(logname+"AL",'a+')
+  f.write(str(settime)+" "+string)
+  f.close()  
 
 def WriteLog(string):
   localtime = time.localtime()
@@ -346,6 +373,8 @@ def SystemTimeStart():
                  ChangeLevel(name,level,chlevel)
                else:
                  SubChangeLevel(name,level,chlevel)
+    
+     #AL()
      #for name in config.sections():
      #  if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
      #      level=config[name]['level']
@@ -811,6 +840,7 @@ def Check_Work():
   global WorkQueue
   global sysconfig
 
+  AL()
   for name in config.sections():
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
       #   KillWork(name)
@@ -865,11 +895,11 @@ def Check_Work():
           if name in WorkQueue[config[name]['level']]['Queue']:       
             fd()
             if config[WorkQueue[config[name]['level']]['run']]['priority'] < config[name]['priority']:
-              print("www"+name)
+              #print("www"+name)
               worklog="{name} Preemption {name2}\n".format(name=name,name2=WorkQueue[config[name]['level']]['run'])
               WriteLog(worklog)
               Preemption(name)
-      fd() 
+      fd()
       WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
       
       stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
@@ -942,18 +972,18 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(11,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     
     #stdscr.addstr(8,0,worktime,curses.A_BOLD)
-    stdscr.move(29,0)
-    stdscr.clrtoeol()
-    stdscr.move(30,0)
-    stdscr.clrtoeol()
-    stdscr.move(31,0)
-    stdscr.clrtoeol()
-    stdscr.move(32,0)
-    stdscr.clrtoeol()
-    stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority']+" "+config['work2']['runtime'],curses.A_BOLD)
-    stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
-    
-    stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
+    #stdscr.move(29,0)
+    #stdscr.clrtoeol()
+    #stdscr.move(30,0)
+    #stdscr.clrtoeol()
+    #stdscr.move(31,0)
+    #stdscr.clrtoeol()
+    #stdscr.move(32,0)
+    #stdscr.clrtoeol()
+    #stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority']+" "+config['work2']['runtime'],curses.A_BOLD)
+    #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
+   # 
+   # stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
     #stdscr.addstr(32,0,"wwwww"+WorkQueue['level3']['run'],curses.A_BOLD)
 
     #s=0
