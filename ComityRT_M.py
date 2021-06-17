@@ -248,7 +248,7 @@ def Bulid_system():
       print("\n")
       print(Criticality_Name[i]+" Complete the build!")
 
-  os.system("python ComityRT_Menu.py")
+  os.system("python ComityRT_M.py")
   
 def Stop2Rm():
   #config = configparser.ConfigParser()

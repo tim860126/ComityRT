@@ -273,6 +273,8 @@ def StopWork(wname):
 
 def Choose_config(choices):
   global sysconfig
+  global CLconfig
+  global CTconfig
   global logname
   global WorkQueue
   global SubLevel
@@ -297,30 +299,34 @@ def Choose_config(choices):
   f.close()
   #sysconfig.read("./config/"+answers['action']+".ini")
   #levellist=sysconfig.sections()
-  sysconfig =ConfigObj('./config/'+answers['action']+'.ini')
+  sysconfig =ConfigObj('./config/System/'+answers['action']+'.ini')
+  CLconfig =ConfigObj('./config/CL/'+sysconfig['ComityRT']['Criticality_Level_Filename'])
+  CTconfig =ConfigObj('./config/Container/'+sysconfig['ComityRT']['Container_Filename'])
   #config.read('./config/'+sname+'.ini')
-  levellist = sysconfig.keys()
-  levellist.remove("ComityRT")
-  
+  levellist = CLconfig.keys()
   #WorkQueue 初始化
+  #print(levellist)
+  #print(CLconfig['level1']['CL_Use_Container'][0])
   for level in levellist: 
-    WorkQueue[level]=dict()
-    WorkQueue[level]['status']=0
-    WorkQueue[level]['Queue']=list()
-    WorkQueue[level]['Sub']=list()
-    if sysconfig[level]['Sub_Level']=="true":
-      SubL= sysconfig[level].keys()
-      DelL= Config_ConList.copy()
-      for k in DelL:
-        SubL.remove(k)
-      for SubN in SubL:
-        WorkQueue[level]['Sub'].append(SubN)
-        SubLevel[SubN]=dict()
-        SubLevel[SubN]['status']=0
-        SubLevel[SubN]['run']=""
-        print(SubLevel)
-  #time.sleep(5)
-  return sysconfig['ComityRT']['Workload_Name']
+    Wtemp=list()
+    if isinstance(CLconfig[level]['CL_Use_Container'],list)==True:
+      for a in CLconfig[level]['CL_Use_Container']:
+        Wtemp.append(a)
+      MCT=CLconfig[level]['CL_Use_Container'][0]
+    else:
+      MCT=CLconfig[level]['CL_Use_Container']
+    WorkQueue[MCT]=dict()
+    WorkQueue[MCT]['status']=0
+    WorkQueue[MCT]['level']=level
+    WorkQueue[MCT]['Queue']=list()
+    WorkQueue[MCT]['Sub']=list()
+    for SubN in Wtemp:
+      WorkQueue[MCT]['Sub'].append(SubN)
+      SubLevel[SubN]=dict()
+      SubLevel[SubN]['status']=0
+      SubLevel[SubN]['run']=""
+  print(WorkQueue)
+  return sysconfig['ComityRT']['TDF_Filename']
 
 def SystemTimeStart():
    global settime
@@ -775,7 +781,7 @@ def read_config(workloadname):
     global config
     global WorkQueue
     config = configparser.ConfigParser()
-    config.read(workloadname)
+    config.read("./config/Workload/"+workloadname)
     i=0  
     for name in config.sections():
        try:
@@ -1001,18 +1007,18 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
   WriteLog("System Running Total {} \n".format(timeprint))
 
 cfg = configparser.ConfigParser()
-cfg.read("System.ini")
+cfg.read("./config/System.ini")
 choice=cfg.sections()
 workloadname=Choose_config(choice)
-stdscr = curses.initscr()
-main(stdscr,workloadname)
-config = configparser.ConfigParser()
-config.read(workloadname)
-for name in config.sections():
-  try:
-     c=subprocess.check_output(['pidof',name])
-     c=c.decode('utf-8').split("\n")[0]
-     if not c is None:
-       os.system("kill -9 $(pidof "+name+")")
-  except:
-     print("Task all Clear")
+#stdscr = curses.initscr()
+#main(stdscr,workloadname)
+#config = configparser.ConfigParser()
+#config.read(workloadname)
+#for name in config.sections():
+#  try:
+#     c=subprocess.check_output(['pidof',name])
+#     c=c.decode('utf-8').split("\n")[0]
+#     if not c is None:
+#       os.system("kill -9 $(pidof "+name+")")
+#  except:
+#     print("Task all Clear")
