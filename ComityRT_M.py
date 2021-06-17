@@ -363,7 +363,7 @@ def Load_config():
       global Sys_Max_Num_Cores
       global TDF_Filename
       global Execution_Level_Mode
-      global Change_Level_Mode
+      global Task_Move
       global Container_Filename
       global Criticality_Level_Filename
 
@@ -385,7 +385,7 @@ def Load_config():
 
       Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
 
-      Change_Level_Mode = config['ComityRT']['Change_Level_Mode']
+      Task_Move = config['ComityRT']['Task_Move']
 
       Container_Filename = config['ComityRT']['Container_Filename']
       
@@ -437,7 +437,7 @@ def View_parameters(fname):
   tb1.add_row(["Sys_Max_Num_Cores",Sys_Max_Num_Cores])
   tb1.add_row(["Sys_Use_Cores",Sys_Use_Cores])
   tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
-  tb1.add_row(["Change_Level_Mode",Change_Level_Mode])
+  tb1.add_row(["Task_Move",Task_Move])
   tb1.add_row(["Container_Filename",Container_Filename])
   tb1.add_row(["Criticality_Level_Filename",Criticality_Level_Filename])
   tb1.add_row(["TDF_Filename",TDF_Filename])
