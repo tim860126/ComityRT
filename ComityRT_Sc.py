@@ -369,7 +369,7 @@ def SystemTimeStart():
          config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
          KillWork(name) 
      
-     if sysconfig['ComityRT']['Change_Level_Mode']=="true":
+     if sysconfig['ComityRT']['Task_Move']=="true":
        for name in config.sections():
          for chlevel in WorkQueue:
            if chlevel in config[name]:
@@ -553,7 +553,7 @@ def Sub_producer(str123,T,name,level):
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
-    if sysconfig[level]['Level_Priority_Mode']=="CFS":
+    if CTconfig[level]['Container_Priority_Mode']=="CFS":
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
         WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
@@ -572,7 +572,7 @@ def Schedule():
         Run_Work(wname)
     
     #若有Sub_Level 則會將佇列中的工作搬移到空閒的Sub_Level
-    if sysconfig[level]['Sub_Level']=="true":
+    if len(WorkQueue[level]['Sub'])>0:
       for SubL in WorkQueue[level]['Sub']:
         if SubLevel[SubL]['status']==0 and len(WorkQueue[level]['Queue'])>0:
           wname=WorkQueue[level]['Queue'].pop(0)
@@ -626,8 +626,7 @@ def Run_Work(wkname):
   config[wkname]['level']=config[wkname]['orilevel']
   workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['orilevel'])+"/"+str(wkname)
   workperiod=config[wkname]['t']
-  t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
-  t1.start()
+
 def Sub_Work(wkname,level):
   global conifg
   workstats=str(level)+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(level)+"/"+str(wkname)
@@ -697,7 +696,7 @@ def WorkSort(config):
 
 def fd():
   for level in WorkQueue:
-    priority_mod(config,sysconfig[level]['Level_Priority_Mode'],level)
+    priority_mod(config,CTconfig[level]['Container_Priority_Mode'],level)
     for i in range(len(WorkQueue[level]['Queue'])):
       for j in range(i):
         aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
@@ -792,15 +791,15 @@ def read_config(workloadname):
        except:
          ca=1
        #config[name]['c']=config[name][config[name]['level']]
-       config[name]['c']=config[name]['c']
-       config[name]['d']=config[name]['d']
-       config[name]['orilevel']=config[name]['level']
+       config[name]['c']=config[name]['Execution_Time']
+       config[name]['d']=config[name]['Deadline_Time']
+       config[name]['t']=config[name]['Period_Time']
        config[name]['runtime']="0"
        config[name]['status']='0'
        config[name]['print']="{0:10}".format(name)
        config[name]['statusprint']=name
        config[name]['workpr']=str(workprintline+i)
-       config[name]['nextstart']=str(config[name]['a'])
+       config[name]['nextstart']=str(config[name]['Arrival_Time'])
        config[name]['priority']="0"
        config[name]['Sub']=""
        config[name]['Kill']=""
@@ -808,6 +807,10 @@ def read_config(workloadname):
     j=0
 
     for name in config.sections():
+      for Ct in WorkQueue:
+        if config[name]['Assignment_Level']==WorkQueue[Ct]['level']:
+           config[name]['level']=Ct
+           config[name]['orilevel']=Ct
       config[name]['statuspr']=str(workprintline+i+j+1)
       if config[name]['nextstart']=="0":
         WorkQueue[config[name]['level']]['Queue'].append(name)
@@ -821,8 +824,9 @@ def read_config(workloadname):
       WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']="" 
       k=k+1
-      print(level+" "+sysconfig[level]['Level_Priority_Mode'])
-    
+      print(level+" "+CTconfig[level]['Container_Priority_Mode'])
+   
+    #print(config[name]) 
     priority_method(config,"RM")
     WorkSort(config)
     #print(levellist.index("level1"))
@@ -896,7 +900,7 @@ def Check_Work():
         
         config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
       
-      if sysconfig['ComityRT']['System_Preemption']=="true" or sysconfig['ComityRT']['System_Preemption']=="True":
+      if sysconfig['ComityRT']['Sys_Preemption']=="true" or sysconfig['ComityRT']['Sys_Preemption']=="True":
         if WorkQueue[config[name]['level']]['run']!="":
           if name in WorkQueue[config[name]['level']]['Queue']:       
             fd()
@@ -1010,15 +1014,15 @@ cfg = configparser.ConfigParser()
 cfg.read("./config/System.ini")
 choice=cfg.sections()
 workloadname=Choose_config(choice)
-#stdscr = curses.initscr()
-#main(stdscr,workloadname)
-#config = configparser.ConfigParser()
-#config.read(workloadname)
-#for name in config.sections():
-#  try:
-#     c=subprocess.check_output(['pidof',name])
-#     c=c.decode('utf-8').split("\n")[0]
-#     if not c is None:
-#       os.system("kill -9 $(pidof "+name+")")
-#  except:
-#     print("Task all Clear")
+stdscr = curses.initscr()
+main(stdscr,workloadname)
+config = configparser.ConfigParser()
+config.read(workloadname)
+for name in config.sections():
+  try:
+     c=subprocess.check_output(['pidof',name])
+     c=c.decode('utf-8').split("\n")[0]
+     if not c is None:
+       os.system("kill -9 $(pidof "+name+")")
+  except:
+     print("Task all Clear")
