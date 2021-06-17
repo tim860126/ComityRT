@@ -194,7 +194,10 @@ def KillWork(wname):
       WorkQueue[config[wname]['level']]['run']=""
     elif wname in WorkQueue[config[wname]['level']]['Queue']:
       WorkQueue[config[wname]['level']]['Queue'].remove(wname)
-      
+    if config[wname]['Sub']!="":
+      if SubLevel[config[wname]['Sub']]['run']==wname:
+        SubLevel[config[wname]['Sub']]['run']=""
+        SubLevel[config[wname]['Sub']]['status']=0  
     #WorkQueue[config[wname]['level']]['Queue'].remove(wname)
     config[wname]['runtime']="0"
     config[wname]['priority']="0"
@@ -313,6 +316,7 @@ def Choose_config(choices):
       for a in CLconfig[level]['CL_Use_Container']:
         Wtemp.append(a)
       MCT=CLconfig[level]['CL_Use_Container'][0]
+      del Wtemp[0]
     else:
       MCT=CLconfig[level]['CL_Use_Container']
     WorkQueue[MCT]=dict()
@@ -325,6 +329,7 @@ def Choose_config(choices):
       SubLevel[SubN]=dict()
       SubLevel[SubN]['status']=0
       SubLevel[SubN]['run']=""
+    #print(WorkQueue[MCT]['Sub'])
   print(WorkQueue)
   return sysconfig['ComityRT']['TDF_Filename']
 
@@ -535,7 +540,6 @@ def Sub_producer(str123,T,name,level):
       config[name]['status']="0"
       config[name]['runtime']="0"
       #config[name]['c']=config[name][config[name]['orilevel']]
-      config[name]['Sub']=""
       config[name]['priority']="0"
       if config[name]['Sub']=="":
         if WorkQueue[config[name]['level']]['run']==name:
@@ -544,6 +548,7 @@ def Sub_producer(str123,T,name,level):
       else:
         SubLevel[config[name]['Sub']]['status']=0
         SubLevel[config[name]['Sub']]['run']=""
+      config[name]['Sub']=""
       config[name]['level']=config[name]['orilevel']
       #config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
       #if len(WorkQueue[config[name]['level']]['Queue'])>0:
@@ -592,7 +597,10 @@ def Schedule():
             SubContWork(wname,SubL)
           #else:       
           #  WorkQueue[level]['Queue'].insert(0,wname)
-    WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])     
+    WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])
+    for SubN in WorkQueue[level]['Sub']:
+      WorkQueue[level]['print']=WorkQueue[level]['print']+" "+SubLevel[SubN]['run']
+    #WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])     
     stdscr.move(int(WorkQueue[level]['statuspr']),0)
     stdscr.clrtoeol()
     stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
@@ -993,15 +1001,15 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(11,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     
     #stdscr.addstr(8,0,worktime,curses.A_BOLD)
-    #stdscr.move(29,0)
-    #stdscr.clrtoeol()
+    stdscr.move(29,0)
+    stdscr.clrtoeol()
     #stdscr.move(30,0)
     #stdscr.clrtoeol()
     #stdscr.move(31,0)
     #stdscr.clrtoeol()
     #stdscr.move(32,0)
     #stdscr.clrtoeol()
-    #stdscr.addstr(29,0,"level "+config['work2']['statusprint']+" "+config['work2']['nextstart']+" status "+config['work2']['status']+" priority "+config['work2']['priority']+" "+config['work2']['runtime'],curses.A_BOLD)
+    stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['d'],curses.A_BOLD)
     #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
    # 
    # stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
