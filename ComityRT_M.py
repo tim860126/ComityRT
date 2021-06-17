@@ -46,7 +46,7 @@ option=""
 def Show_System_Status():
   #config = configparser.ConfigParser()
   #config.read('System.ini')
-  config = ConfigObj('./System.ini')
+  config = ConfigObj('./config/System.ini')
   #sysname=config.sections()
   sysname=config.keys()
   tb1 = pt.PrettyTable()
@@ -222,7 +222,7 @@ def Bulid_system():
   config = configparser.ConfigParser() 
   config_name=Load_config()
   #config.read("System.ini")
-  config.read("./System.ini")
+  config.read("./config/System.ini")
   #config = ConfigObj('./System.ini')
   if config_name!="Back" and config_name!=False:
     sysname=config_name[:-4]
@@ -230,7 +230,7 @@ def Bulid_system():
       config.add_section(sysname)
       #config['sysname']={}
       #config.write()
-      config.write(open('System.ini', "w"))
+      config.write(open('./config/System.ini', "w"))
   
     for i in range(len(Criticality_Name)):
       Container_Use_Cores=""
@@ -254,7 +254,7 @@ def Stop2Rm():
   #config = configparser.ConfigParser()
   #sysconfig =configparser.ConfigParser()
   #sysconfig.read("System.ini") 
-  sysconfig =ConfigObj('./System.ini')
+  sysconfig =ConfigObj('./config/System.ini')
   choices=[]
   #choices=sysconfig.sections()
   choices=sysconfig.keys()
@@ -265,12 +265,13 @@ def Stop2Rm():
       return "Back"
   else:
      ans=ContinueQue("Are you sure you want to stop the system?")
-     path="./config/"+str(cfgN)+".ini"
+     path="./config/System/"+str(cfgN)+".ini"
      #config.read(path)
      config=ConfigObj(path)
+     CTFilename=config['ComityRT']['Container_Filename']
+     CTconfig=ConfigObj('./config/Container/'+CTFilename)
      #AList=config.sections()
-     AList=config.keys()
-     AList.remove("ComityRT")
+     AList=CTconfig.keys()
      print(cfgN+" Start stop and delete....")
      for Lname in AList:
 
@@ -279,18 +280,6 @@ def Stop2Rm():
        if status=="true":
          print(Lname+" Successfully Deleted!")
       
-       if config[Lname]['Sub_Level']=="true": 
-         
-         SubL= config[Lname].keys()
-         DelL= Config_ConList.copy()
-         DelL.remove("Back")
-         for k in DelL:
-           SubL.remove(k)
-         for SubN in SubL:
-           status=subprocess.check_output(["sh","Stop2RmDocker.sh",SubN])
-           status=status.decode('utf-8').split("\n")[0]
-           if status=="true":
-             print(SubN+" Successfully Deleted!")
      #sysconfig.remove_section(cfgN)
      del sysconfig[cfgN]
      sysconfig.write()
@@ -401,7 +390,7 @@ def Load_config():
       Level=[]
       for i in Criticality_Name:
         #Level=config[str(i)]
-        Ciritical_container.append(config[str(i)])
+        Ciritical_container.append(CTconfig[str(i)])
         #print(config[str(i)][str(j)])
   
       View_parameters(fname)
