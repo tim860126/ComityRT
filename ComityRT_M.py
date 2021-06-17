@@ -13,7 +13,7 @@ from configobj import ConfigObj
 #config = configparser.ConfigParser()
 
 
-Config_MainList="[Num_Criticality_Level","Sched_Algorithm","Sys_Max_Num_Cores","Sys_Use_Cores","Sys_Preemption","TDF_Filename","Container_Filename","Criticality_Level_Filename","Execution_Level_Mode","Task_Move","Back"]
+Config_MainList=["Num_Criticality_Level","Sched_Algorithm","Sys_Max_Num_Cores","Sys_Use_Cores","Sys_Preemption","TDF_Filename","Container_Filename","Criticality_Level_Filename","Execution_Level_Mode","Task_Move","Back"]
 
 Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Container_Priority_Mode","Back"]
 
@@ -55,11 +55,11 @@ def Show_System_Status():
   for sname in sysname:
     #config = configparser.ConfigParser()
     #config =ConfigObj('./config/'+sname+'.ini')
-    config=ConfigObj('./config/Sysmtem/'+sname+'.ini')
+    config=ConfigObj('./config/System/'+sname+'.ini')
     #config.read('./config/'+sname+'.ini')
-    CTFilename=config['Container_Filename']
-    CTconfig=ConfigObj('./config/Sysmtem/'+CTFilename)
-    Criti_Name = config.keys()
+    CTFilename=config['ComityRT']['Container_Filename']
+    CTconfig=ConfigObj('./config/Container/'+CTFilename)
+    Criti_Name = CTconfig.keys()
     sysinfo="" 
     syserror=""
     for cname in Criti_Name:
@@ -352,8 +352,8 @@ def Load_config():
   
       configpath='./config/System/'+cfgN
       config=ConfigObj(configpath)
-      CTFilename=config['Container_Filename']
-      CTconfig=ConfigObj('./config/Sysmtem/'+CTFilename)
+      CTFilename=config['ComityRT']['Container_Filename']
+      CTconfig=ConfigObj('./config/Container/'+CTFilename)
       #config.read(configpath)
       global Criticality_Name
       global Sys_Use_Cores
