@@ -13,29 +13,30 @@ from configobj import ConfigObj
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Criticality_Name","Pirority_assignment_method","System_Use_Cores","num_Criticality_Level","System_Preemption","System_MaxNum_Cores_Limit","Workload_Name","Execution_Level_Mode","Change_Level_Mode","Scheduleability_analysis","Back"]
+Config_MainList="[Num_Criticality_Level","Sched_Algorithm","Sys_Max_Num_Cores","Sys_Use_Cores","Sys_Preemption","TDF_Filename","Container_Filename","Criticality_Level_Filename","Execution_Level_Mode","Task_Move","Back"]
 
-Config_ConList=["Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode","Back"]
+Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Container_Priority_Mode","Back"]
 
-Criticality_Name =""
 
-System_MaxNum_Cores_Limit=""
+Num_Criticality_Level=""
 
-System_Use_Cores =""
+Sched_Algorithm=""
 
-num_Criticality_Level =""
+Sys_Max_Num_Cores=""
 
-System_Preemption =""
+Sys_Use_Cores=""
 
-Pirority_assignment_method =""
+Sys_Preemption=""
 
-Workload_Name =""
+TDF_Filename=""
 
-Execution_Level_Mode =""
+Container_Filename=""
 
-Change_Level_Mode =""
+Criticality_Level_Filename=""
 
-Scheduleability_analysis =""
+Execution_Level_Mode=""
+
+Task_Move=""
 
 Ciritical_container=[]
 
@@ -53,10 +54,12 @@ def Show_System_Status():
   
   for sname in sysname:
     #config = configparser.ConfigParser()
-    config =ConfigObj('./config/'+sname+'.ini')
+    #config =ConfigObj('./config/'+sname+'.ini')
+    config=ConfigObj('./config/Sysmtem/'+sname+'.ini')
     #config.read('./config/'+sname+'.ini')
+    CTFilename=config['Container_Filename']
+    CTconfig=ConfigObj('./config/Sysmtem/'+CTFilename)
     Criti_Name = config.keys()
-    Criti_Name.remove("ComityRT")
     sysinfo="" 
     syserror=""
     for cname in Criti_Name:
@@ -70,20 +73,6 @@ def Show_System_Status():
         sysinfo=sysinfo+" "+cname+":Error\n"
         syserror="true"
       
-      if config[cname]['Sub_Level']=="true":
-         SubL= config[cname].keys()
-         DelL= Config_ConList.copy()
-         DelL.remove("Back")
-         for k in DelL:
-           SubL.remove(k)
-         for SubN in SubL:
-           status=subprocess.check_output(["sh","CheckDocker.sh",SubN])
-           stauts=status.decode('utf-8').split("\n")[0]
-
-           if stauts=="false":
-             sysinfo=sysinfo+" "+SubN+":Error\n"
-             syserror="true"
-         #print(cname,config[cname]['Sub_Level'])
 
     if syserror!="true":
       sysinfo="System Running!"     
@@ -214,7 +203,7 @@ def Edit_config(msg,AList):
     elif config_name=="Back":
       pass
     else:
-      path="./config/"+str(config_name)
+      path="./config/System/"+str(config_name)
       config=ConfigObj(path)
       #config.read(path)
       #AList=config.sections()
@@ -244,14 +233,14 @@ def Bulid_system():
       config.write(open('System.ini', "w"))
   
     for i in range(len(Criticality_Name)):
-      Level_Use_Cores=""
-      Level_Cores_Weights=Ciritical_container[i]['Level_Cores_Weights']
-      Level_Memory_Limit=Ciritical_container[i]['Level_Memory_Limit']
-      for j in range(len(Ciritical_container[i]['Level_Use_Cores'])):
-        Level_Use_Cores=Level_Use_Cores+Ciritical_container[i]['Level_Use_Cores'][j]+","
-      Level_Use_Cores=Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
-      print(Level_Cores_Weights)
-      CreateCMD(Criticality_Name[i],Level_Use_Cores,Level_Cores_Weights,Level_Memory_Limit)
+      Container_Use_Cores=""
+      Container_Cores_Weights=Ciritical_container[i]['Container_Cores_Weights']
+      Container_Memory_Limit=Ciritical_container[i]['Container_Memory_Limit']
+      for j in range(len(Ciritical_container[i]['Container_Use_Cores'])):
+        Container_Use_Cores=Container_Use_Cores+Ciritical_container[i]['Container_Use_Cores'][j]+","
+      Container_Use_Cores=Container_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
+      print(Container_Cores_Weights)
+      CreateCMD(Criticality_Name[i],Container_Use_Cores,Container_Cores_Weights,Container_Memory_Limit)
       progress = ProgressBar().start()
       t1=threading.Thread(target=dosomework,args=(progress,))
       t1.start()
@@ -259,29 +248,8 @@ def Bulid_system():
       print("\n")
       print(Criticality_Name[i]+" Complete the build!")
 
-      if Ciritical_container[i]['Sub_Level']=="true":
-        SubL= Ciritical_container[i].keys()
-        DelL= Config_ConList.copy()
-        DelL.remove("Back")
-        for k in DelL:
-          SubL.remove(k)
-        for SubN in SubL:
-          Sub_Level_Use_Cores=""
-          Sub_Level_Cores_Weights=Ciritical_container[i][SubN]['Level_Cores_Weights']
-          Sub_Level_Memory_Limit=Ciritical_container[i][SubN]['Level_Memory_Limit']
-          for j in range(len(Ciritical_container[i][SubN]['Level_Use_Cores'])):
-            Sub_Level_Use_Cores=Sub_Level_Use_Cores+Ciritical_container[i][SubN]['Level_Use_Cores'][j]+","
-          Sub_Level_Use_Cores=Sub_Level_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
-          #print(Sub_Level_Use_Cores)
-          print(Sub_Level_Cores_Weights)
-          CreateCMD(SubN,Sub_Level_Use_Cores,Sub_Level_Cores_Weights,Level_Memory_Limit)
-          progress = ProgressBar().start()
-          t1=threading.Thread(target=dosomework,args=(progress,))
-          t1.start()
-          time.sleep(2)
-          print("\n")
-          print(SubN+" Complete the build!")
   os.system("python ComityRT_Menu.py")
+  
 def Stop2Rm():
   #config = configparser.ConfigParser()
   #sysconfig =configparser.ConfigParser()
@@ -339,7 +307,7 @@ def CreateCMD(Name,CPU_U,weights,Memory):
 
 def Found_config():
   choices=[]
-  path="./config"
+  path="./config/System/"
   if os.path.isdir(path):
     for fname in os.listdir(path):
       if fname.endswith(".ini"):
@@ -382,45 +350,50 @@ def Load_config():
   
     if ans['continue']==True:
   
-      configpath='./config/'+cfgN
+      configpath='./config/System/'+cfgN
       config=ConfigObj(configpath)
+      CTFilename=config['Container_Filename']
+      CTconfig=ConfigObj('./config/Sysmtem/'+CTFilename)
       #config.read(configpath)
       global Criticality_Name
-      global System_Use_Cores
-      global num_Criticality_Level
-      global System_Preemption
-      global Pirority_assignment_method
-      global System_MaxNum_Cores_Limit
-      global Workload_Name
+      global Sys_Use_Cores
+      global Num_Criticality_Level
+      global Sys_Preemption
+      global Sched_Algorithm
+      global Sys_Max_Num_Cores
+      global TDF_Filename
       global Execution_Level_Mode
       global Change_Level_Mode
-      global Scheduleability_analysis
+      global Container_Filename
+      global Criticality_Level_Filename
 
       #Criticality_Name = config.get('ComityRT' , 'Criticality_Name').split()
       #Criticality_Name = config.sections()
-      Criticality_Name = config.keys()
- 
-      Criticality_Name.remove("ComityRT")
+      Criticality_Name = CTconfig.keys()
      
-      #System_Use_Cores = config.get('ComityRT' , 'System_Use_Cores').split()
+      #Sys_Use_Cores = config.get('ComityRT' , 'Sys_Use_Cores').split()
 
-      System_Use_Cores = config['ComityRT']['System_Use_Cores']
+      Sys_Use_Cores = config['ComityRT']['Sys_Use_Cores']
     
-      num_Criticality_Level=config['ComityRT']['num_Criticality_Level']
+      Num_Criticality_Level=config['ComityRT']['Num_Criticality_Level']
 
-      System_Preemption=config['ComityRT']['System_Preemption']
+      Sys_Preemption=config['ComityRT']['Sys_Preemption']
 
-      Pirority_assignment_method =config['ComityRT']['Pirority_assignment_method']
+      Sched_Algorithm =config['ComityRT']['Sched_Algorithm']
 
-      System_MaxNum_Cores_Limit=config['ComityRT']['System_MaxNum_Cores_Limit']
-
-      Workload_Name = config['ComityRT']['Workload_Name']
+      Sys_Max_Num_Cores=config['ComityRT']['Sys_Max_Num_Cores']
 
       Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
 
       Change_Level_Mode = config['ComityRT']['Change_Level_Mode']
 
-      Scheduleability_analysis = config['ComityRT']['Scheduleability_analysis']
+      Container_Filename = config['ComityRT']['Container_Filename']
+      
+      Criticality_Level_Filename = config['ComityRT']['Criticality_Level_Filename']
+      
+      TDF_Filename = config['ComityRT']['TDF_Filename']
+  
+      
   
       fname=cfgN
 
@@ -457,43 +430,32 @@ def View_parameters(fname):
   Temp=""
   tb1 = pt.PrettyTable()
   tb1.field_names = ["Parameter",fname]
-  tb1.add_row(["num_Criticality_Level",num_Criticality_Level])
-  tb1.add_row(["System_Preemption",System_Preemption])
+  tb1.add_row(["Num_Criticality_Level",Num_Criticality_Level])
+  tb1.add_row(["Sys_Preemption",Sys_Preemption])
   #tb1.add_row(["Criticality_Name",Criticality_Name])
-  tb1.add_row(["Pirority_assignment_method",Pirority_assignment_method])
-  tb1.add_row(["System_MaxNum_Cores_Limit",System_MaxNum_Cores_Limit])
-  tb1.add_row(["System_Use_Cores",System_Use_Cores])
-  tb1.add_row(["Workload_Name",Workload_Name])
+  tb1.add_row(["Sched_Algorithm",Sched_Algorithm])
+  tb1.add_row(["Sys_Max_Num_Cores",Sys_Max_Num_Cores])
+  tb1.add_row(["Sys_Use_Cores",Sys_Use_Cores])
   tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
   tb1.add_row(["Change_Level_Mode",Change_Level_Mode])
-  tb1.add_row(["Scheduleability_analysis",Scheduleability_analysis])
+  tb1.add_row(["Container_Filename",Container_Filename])
+  tb1.add_row(["Criticality_Level_Filename",Criticality_Level_Filename])
+  tb1.add_row(["TDF_Filename",TDF_Filename])
   tb1.align="l"
   print(tb1) 
 
-  #print('\n================ '+fname+' =================\n')
-
-  #print('num_Criticality_Level =',num_Criticality_Level)
-  #print('\nCriticality_Name =',Criticality_Name)
-  #print('\nPirority_assignment_method =',Pirority_assignment_method)
-  #print('\nCPU_Limit =',CPU_Limit)
-  #print('\nCPU_Use =',CPU_Use);
-  #print('\nWorkload_Name =',Workload_Name)
-  #print('\nExecution_Level_Mode =',Execution_Level_Mode)
-  #print('\nPriority_Mode =',Priority_Mode)
-  #print('\nScheduleability_analysis =',Scheduleability_analysis)
   Temp=copy.deepcopy(Config_ConList)
   Temp.pop()
   tb1 = pt.PrettyTable()
   
-  tb1.field_names = ["Criticality_Level",
-                       "Sub_Level",
-                       "Level_Use_Cores",
-                       "Level_Cores_Weights",
-                       "Level_Memory_Limit",
-                       "Level_Priority_Mode",
+  tb1.field_names = ["Container",
+                       "Container_Use_Cores",
+                       "Container_Cores_Weights",
+                       "Container_Memory_Limit",
+                       "Container_Priority_Mode",
                      ]
 
-  configpath='./config/'+fname
+  configpath='./config/System/'+fname
   config=ConfigObj(configpath)
 
   for i in range(len(Criticality_Name)):
@@ -502,22 +464,7 @@ def View_parameters(fname):
     for j in Temp:
       Temp2.append(Ciritical_container[i][j])  
     tb1.add_row(Temp2)
-    if config[Criticality_Name[i]]['Sub_Level']=="true":
-      SubL= config[Criticality_Name[i]].keys()
-      DelL= Temp.copy()
-      for k in DelL:
-        SubL.remove(k)
-      for SubN in SubL:
-        Temp2=[]
-        Temp2.append(SubN)
-        for j in Temp:
-          if j=="Sub_Level":
-            Temp2.append(Criticality_Name[i]+" Sub_Level")
-          elif j=="Level_Priority_Mode":
-            Temp2.append(Criticality_Name[i]+" Sub_Level")
-          else:
-            Temp2.append(config[Criticality_Name[i]][SubN][j])
-        tb1.add_row(Temp2) 
+    
           
     
   print(tb1) 
