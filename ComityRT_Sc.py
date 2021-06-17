@@ -367,14 +367,20 @@ def SystemTimeStart():
      for name in config.sections():
        if config[name]['d']==str(settime):
          config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
-         KillWork(name) 
-     
+         msg=FindPid(name)
+         if msg=="true":
+           KillWork(name)
+ 
+     levellist=CLconfig.keys()
      if sysconfig['ComityRT']['Task_Move']=="true":
        for name in config.sections():
-         for chlevel in WorkQueue:
+         for chlevel in levellist:
            if chlevel in config[name]:
-             if config[name]['runtime']==config[name][chlevel] and config[name]['level']!=chlevel:
+             if config[name]['runtime']==config[name][chlevel] and WorkQueue[config[name]['level']]['level']!=chlevel:
                level=config[name]['level']
+               for CT in WorkQueue:
+                 if WorkQueue[CT]['level']==chlevel:
+                   chlevel=CT
                if config[name]['Sub']=="":
                  ChangeLevel(name,level,chlevel)
                else:
@@ -556,7 +562,7 @@ def Schedule():
     if CTconfig[level]['Container_Priority_Mode']=="CFS":
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
-        WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
+        #WorkQueue[level]['print']==WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])
         if config[wname]['status']=="-1": #判斷工作是否是暫停還是尚未執行
           ContWork(wname)
         else:
@@ -564,11 +570,12 @@ def Schedule():
  
     elif WorkQueue[level]['status']==0 and len(WorkQueue[level]['Queue'])>0:
       wname=WorkQueue[level]['Queue'].pop(0)
-      WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
+      #WorkQueue[level]['print']==WorkQueue[level]+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']=wname
       if config[wname]['status']=="-1":
         ContWork(wname)
       else:
+        print("hhh")
         Run_Work(wname)
     
     #若有Sub_Level 則會將佇列中的工作搬移到空閒的Sub_Level
@@ -578,14 +585,14 @@ def Schedule():
           wname=WorkQueue[level]['Queue'].pop(0)
           #config[wname]['level']=SubL
           if config[wname]['status']=="0":   #工作尚未在任何容器下執行
-            WorkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
+            #orkQueue[config[wname]['level']]['print']=config[wname]['level']+":"+str(WorkQueue[config[wname]['level']]['Queue'])+" "+str(WorkQueue[config[wname]['level']]['status'])+" "+str(WorkQueue[config[wname]['level']]['run'])
             Sub_Work(wname,SubL)
           elif config[wname]['status']=="-1": #工作在其他容器內執行了 所以要進行工作搬移
             ContChangeLevel(wname,SubL)
             SubContWork(wname,SubL)
           #else:       
           #  WorkQueue[level]['Queue'].insert(0,wname)
-          
+    WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])     
     stdscr.move(int(WorkQueue[level]['statuspr']),0)
     stdscr.clrtoeol()
     stdscr.addstr(int(WorkQueue[level]['statuspr']),0,WorkQueue[level]['print'],curses.A_BOLD)
@@ -624,8 +631,10 @@ def Start_Work():
 def Run_Work(wkname):
   global conifg
   config[wkname]['level']=config[wkname]['orilevel']
-  workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['orilevel'])+"/"+str(wkname)
+  workstats=str(config[wkname]['level'])+" timeout "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
   workperiod=config[wkname]['t']
+  t1=threading.Thread(target=producer,args=(workstats,workperiod,wkname,))
+  t1.start()
 
 def Sub_Work(wkname,level):
   global conifg
@@ -811,6 +820,8 @@ def read_config(workloadname):
         if config[name]['Assignment_Level']==WorkQueue[Ct]['level']:
            config[name]['level']=Ct
            config[name]['orilevel']=Ct
+   
+    for name in config.sections():
       config[name]['statuspr']=str(workprintline+i+j+1)
       if config[name]['nextstart']=="0":
         WorkQueue[config[name]['level']]['Queue'].append(name)
@@ -821,11 +832,11 @@ def read_config(workloadname):
 
     for level in WorkQueue:
       WorkQueue[level]['statuspr']=str(workprintline+i+j+k+2)
-      WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])
+      WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']="" 
       k=k+1
       print(level+" "+CTconfig[level]['Container_Priority_Mode'])
-   
+      print(str(WorkQueue[level]['Queue'])) 
     #print(config[name]) 
     priority_method(config,"RM")
     WorkSort(config)
@@ -910,7 +921,7 @@ def Check_Work():
               WriteLog(worklog)
               Preemption(name)
       fd()
-      WorkQueue[config[name]['level']]['print']=config[name]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
+      WorkQueue[config[name]['level']]['print']=WorkQueue[config[name]['level']]['level']+":"+str(WorkQueue[config[name]['level']]['Queue'])+" "+str(WorkQueue[config[name]['level']]['status'])+" "+str(WorkQueue[config[name]['level']]['run'])
       
       stdscr.move(int(WorkQueue[config[name]['level']]['statuspr']),0)
       stdscr.clrtoeol()
@@ -960,7 +971,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     stdscr.addstr(8,0,worktime,curses.A_BOLD)
 
     for level in WorkQueue:
-      WorkQueue[level]['print']=level+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])
+      WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])+" "+str(WorkQueue[level]['status'])+" "+str(WorkQueue[level]['run'])
       stdscr.move(int(WorkQueue[level]['statuspr']),0)
       stdscr.clrtoeol()
           
