@@ -32,8 +32,8 @@ def AL():
       Wtemp2=Wtemp.copy()
       Wtemp2.remove(name)
       for name2 in Wtemp:
-        if config['Tasks'][name]['priority'] < config[name2]['priority']:
-          exc=exc+int(config[name2]['c'])-int(config[name2]['runtime'])
+        if config['Tasks'][name]['priority'] < config['Tasks'][name2]['priority']:
+          exc=exc+int(config['Tasks'][name2]['c'])-int(config['Tasks'][name2]['runtime'])
           #worklog="{name} {name2} {p} {p2}\n".format(name=str(Wtemp2),name2=name, p=str(config['Tasks'][name]['priority']),p2=str(config[name2]['priority']))
           #WriteAL(worklog)
       nowEnd=settime+exc
@@ -359,7 +359,7 @@ def SystemTimeStart():
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
      #Check_Work()
      #Schedule()
-     for name in H:
+     for name in config['Tasks'].keys():
        if(config['Tasks'][name]['status']=="0" or config['Tasks'][name]['status']=="-1"):
          config['Tasks'][name]['print']=config['Tasks'][name]['print']+" "
          stdscr.addstr(int(config['Tasks'][name]['workpr']),0,config['Tasks'][name]['print'],curses.A_BOLD)
@@ -453,8 +453,8 @@ def producer(str123,T,name):
     WorkQueue[config['Tasks'][name]['level']]['status']=1
     #config['Tasks'][name]['nextstart']=str(int(config['Tasks'][name]['nextstart'])+int(config['Tasks'][name]['t']))
     pname="{0:10}".format(name)
-    C="{0:4}".format(config['Tasks'][name]['C'])
-    T="{0:4}".format(config['Tasks'][name]['T'])
+    C="{0:4}".format(config['Tasks'][name]['c'])
+    T="{0:4}".format(config['Tasks'][name]['t'])
     level="{0:8}".format(config['Tasks'][name]['level'])
     worklog="Run {name} in {level} excution {C} period {T}\n".format(name=pname,level=level,C=C,T=T)
     WriteLog(worklog)
@@ -516,8 +516,8 @@ def Sub_producer(str123,T,name,level):
     #str123.replace(config['Tasks'][name]['level'],level)
     #config['Tasks'][name]['nextstart']=str(int(config['Tasks'][name]['nextstart'])+int(config['Tasks'][name]['t']))
     pname="{0:10}".format(name)
-    C="{0:4}".format(config['Tasks'][name]['C'])
-    T="{0:4}".format(config['Tasks'][name]['T'])
+    C="{0:4}".format(config['Tasks'][name]['c'])
+    T="{0:4}".format(config['Tasks'][name]['t'])
     level2="{0:8}".format(level)
     worklog="Run Sub {name} in {level} excution {C} period {T}\n".format(name=pname,level=level2,C=C,T=T)
     WriteLog(worklog)
@@ -664,8 +664,8 @@ def LevelSort(level):
   global config
   for i in range(len(WorkQueue[level]['Queue'])):
     for j in range(i):
-      aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
-      bb=int(config[WorkQueue[level]['Queue'][i]]['priority'])
+      aa=int(config['Tasks'][WorkQueue[level]['Queue'][j]]['priority'])
+      bb=int(config['Tasks'][WorkQueue[level]['Queue'][i]]['priority'])
       if aa < bb :
         temp=WorkQueue[level]['Queue'][j]
         WorkQueue[level]['Queue'][j]=WorkQueue[level]['Queue'][i]
@@ -677,8 +677,8 @@ def WorkSort(config):
   for level in WorkQueue:
     for i in range(len(WorkQueue[level]['Queue'])):
       for j in range(i):
-        aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
-        bb=int(config[WorkQueue[level]['Queue'][i]]['priority'])
+        aa=int(config['Tasks'][WorkQueue[level]['Queue'][j]]['priority'])
+        bb=int(config['Tasks'][WorkQueue[level]['Queue'][i]]['priority'])
         if aa < bb :
           temp=WorkQueue[level]['Queue'][j]
           WorkQueue[level]['Queue'][j]=WorkQueue[level]['Queue'][i]
@@ -716,8 +716,8 @@ def fd():
     priority_mod(config,CTconfig[level]['Container_Priority_Mode'],level)
     for i in range(len(WorkQueue[level]['Queue'])):
       for j in range(i):
-        aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
-        bb=int(config[WorkQueue[level]['Queue'][i]]['priority'])
+        aa=int(config['Tasks'][WorkQueue[level]['Queue'][j]]['priority'])
+        bb=int(config['Tasks'][WorkQueue[level]['Queue'][i]]['priority'])
         if aa < bb :
           temp=WorkQueue[level]['Queue'][j]
           WorkQueue[level]['Queue'][j]=WorkQueue[level]['Queue'][i]
@@ -730,8 +730,8 @@ def priority_mod(config,Ch,level):
   if Ch=="RM":
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[j]]['t'])
-        bb=int(config[Wtemp[i]]['t'])
+        aa=int(config['Tasks'][Wtemp[j]]['t'])
+        bb=int(config['Tasks'][Wtemp[i]]['t'])
         if aa > bb :
           temp=Wtemp[j]
           Wtemp[j]=Wtemp[i]
@@ -746,8 +746,8 @@ def priority_mod(config,Ch,level):
   if Ch=="EDF":
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[i]]['nextstart'])-settime
-        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        aa=int(config['Tasks'][Wtemp[i]]['nextstart'])-settime
+        bb=int(config['Tasks'][Wtemp[j]]['nextstart'])-settime
         if aa > bb :
           temp=Wtemp[i]
           Wtemp[i]=Wtemp[j]
@@ -763,8 +763,8 @@ def priority_method(config,Ch):
     Wtemp=config['Tasks'].keys()
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[j]]['t'])
-        bb=int(config[Wtemp[i]]['t'])
+        aa=int(config['Tasks'][Wtemp[j]]['t'])
+        bb=int(config['Tasks'][Wtemp[i]]['t'])
         if aa > bb :
           temp=Wtemp[j]
           Wtemp[j]=Wtemp[i]
@@ -780,8 +780,8 @@ def priority_method(config,Ch):
     Wtemp=config['Tasks'].keys()
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[i]]['nextstart'])-settime
-        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        aa=int(config['Tasks'][Wtemp[i]]['nextstart'])-settime
+        bb=int(config['Tasks'][Wtemp[j]]['nextstart'])-settime
         if aa > bb :
           temp=Wtemp[i]
           Wtemp[i]=Wtemp[j]
@@ -1008,7 +1008,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.clrtoeol()
     #stdscr.move(32,0)
     #stdscr.clrtoeol()
-    stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['d'],curses.A_BOLD)
+    #stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['d'],curses.A_BOLD)
     #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
    # 
    # stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
