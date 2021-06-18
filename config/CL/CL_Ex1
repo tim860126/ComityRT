@@ -1,0 +1,11 @@
+[level1]
+CL_Use_Container=C1_1,C1_2
+CL_Weights=10
+
+[level2]
+CL_Use_Container=C2_1,C2_2
+CL_Weights=20
+
+[level3]
+CL_Use_Container=C3
+CL_Weights=30

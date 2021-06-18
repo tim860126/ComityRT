@@ -201,7 +201,7 @@ def KillWork(wname):
     #WorkQueue[config[wname]['level']]['Queue'].remove(wname)
     config[wname]['runtime']="0"
     config[wname]['priority']="0"
-    config[wname]['d']=str(int(config[wname]['d'])+int(config[wname]['d']))
+    #config[wname]['d']=str(int(config[wname]['d'])+int(config[wname]['d']))
     #config[wname]['C']=config[wname][config[wname]['orilevel']]
     config[wname]['Kill']="1"
     #os.system("kill -9 $(pidof "+wname+")")
@@ -371,7 +371,7 @@ def SystemTimeStart():
      
      for name in config.sections():
        if config[name]['d']==str(settime):
-         config[name]['d']=str(int(config[name]['d'])+int(config[name]['d']))
+         config[name]['d']=str(int(config[name]['d'])+int(config[name]['Deadline_Time']))
          msg=FindPid(name)
          if msg=="true":
            KillWork(name)
