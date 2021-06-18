@@ -827,7 +827,7 @@ def read_config(workloadname):
         if config['Tasks'][name]['Assignment_Level']==WorkQueue[Ct]['level']:
            config['Tasks'][name]['level']=Ct
            config['Tasks'][name]['orilevel']=Ct
-   
+      print(config['Tasks'][name]) 
     for name in config['Tasks'].keys():
       config['Tasks'][name]['statuspr']=str(workprintline+i+j+1)
       if config['Tasks'][name]['nextstart']=="0":
@@ -882,7 +882,7 @@ def Check_Work():
         if len(WorkQueue[config['Tasks'][name]['level']]['Queue'])>0: #加入的工作優先權向前排
           ch=0
           for i in range(len(WorkQueue[config['Tasks'][name]['level']]['Queue'])): #將工作依照優先權加入的佇列中
-            if config['Tasks'][name]['priority'] > config[WorkQueue[config['Tasks'][name]['level']]['Queue'][i]]['priority']:
+            if config['Tasks'][name]['priority'] > config['Tasks'][WorkQueue[config['Tasks'][name]['level']]['Queue'][i]]['priority']:
               if (name not in WorkQueue[config['Tasks'][name]['level']]['Queue']) and (WorkQueue[config['Tasks'][name]['level']]['run']!=name):
                 WorkQueue[config['Tasks'][name]['level']]['Queue'].insert(i,name)
                 #config['Tasks'][name]['nextstart']=str(int(config['Tasks'][name]['nextstart'])+int(config['Tasks'][name]['t']))
@@ -922,7 +922,7 @@ def Check_Work():
         if WorkQueue[config['Tasks'][name]['level']]['run']!="":
           if name in WorkQueue[config['Tasks'][name]['level']]['Queue']:       
             fd()
-            if config[WorkQueue[config['Tasks'][name]['level']]['run']]['priority'] < config['Tasks'][name]['priority']:
+            if config['Tasks'][WorkQueue[config['Tasks'][name]['level']]['run']]['priority'] < config['Tasks'][name]['priority']:
               #print("www"+name)
               worklog="{name} Preemption {name2}\n".format(name=name,name2=WorkQueue[config['Tasks'][name]['level']]['run'])
               WriteLog(worklog)
@@ -1008,6 +1008,8 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.clrtoeol()
     #stdscr.move(32,0)
     #stdscr.clrtoeol()
+    #stdscr.addstr(29,0,WorkQueue['C1_1']['print'],curses.A_BOLD)
+    #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
     #stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['d'],curses.A_BOLD)
     #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
    # 
@@ -1022,7 +1024,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
       timeprint=str(int(m))+" min "+str(int(s))+" sec"
     else:
       timeprint=str(settime)+" sec"
-    
+    print(settime) 
     k = stdscr.getch()
  
   curses.endwin()
