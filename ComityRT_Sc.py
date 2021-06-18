@@ -12,6 +12,8 @@ from configobj import ConfigObj
 
 Config_ConList=["Sub_Level","Level_Use_Cores","Level_Cores_Weights","Level_Memory_Limit","Level_Priority_Mode"]
 
+Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Container_Priority_Mode"]
+
 workfolder="./work/"
 
 multifolder="./multi-level/"
