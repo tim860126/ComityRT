@@ -356,6 +356,9 @@ def SystemTimeStart():
      else:
        timeprint=str(settime)+" sec"
      
+     if sysconfig['ComityRT']['Sched_Algorithm']=="SMC":
+       SMC_RunCheck()
+ 
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
      #Check_Work()
      #Schedule()
@@ -371,13 +374,18 @@ def SystemTimeStart():
      
      for name in config.sections():
        if config[name]['d']==str(settime):
-         config[name]['d']=str(int(config[name]['d'])+int(config[name]['Deadline_Time']))
+         config[name]['d']=str(int(config[name]['nextstart'])+int(config[name]['Deadline_Time']))
          msg=FindPid(name)
          if msg=="true":
            KillWork(name)
+
+
+
+
+
  
      levellist=CLconfig.keys()
-     if sysconfig['ComityRT']['Task_Move']=="true":
+     if sysconfig['ComityRT']['Task_Move']=="true" and sysconfig['ComityRT']['Sched_Algorithm']!="SMC":
        for name in config.sections():
          for chlevel in levellist:
            if chlevel in config[name]:
@@ -580,7 +588,6 @@ def Schedule():
       if config[wname]['status']=="-1":
         ContWork(wname)
       else:
-        print("hhh")
         Run_Work(wname)
     
     #若有Sub_Level 則會將佇列中的工作搬移到空閒的Sub_Level
@@ -711,6 +718,61 @@ def WorkSort(config):
       #for wname in Wtemp:
         #print(level+":"+wname+":"+config[wname]['priority'])
 
+def SMC_RunCheck():
+  
+  levellist=CLconfig.keys()
+  #maxC=0
+  #maxCL=""
+  #for level in levellist:
+  #  if int(CLconfig[level]['CL_Weights']) > maxC:
+  #    maxC=int(CLconfig[level]['CL_Weights'])
+  #    maxCL=level
+  #sysconfig['ComityRT']['maxCL']=maxCL
+  #for name in config.sections():
+  #  for level in levellist:
+  #    if int(config[name]['runtime']) > int(config[name][level]):
+  #      if int(CLconfig[config[name]['CL']]['CL_Weights']) > int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+  #        sysconfig['ComityRT']['ExCL']=config[name]['CL']
+  #for level in WorkQueue:
+    #for name in WorkQueue[level]['Queue']:
+      #CL=config[name]['CL']
+      #if int(CLconfig[CL]['CL_Weights']) < int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+        #WorkQueue[level]['Queue'].remove(name)
+      
+   
+  for level in WorkQueue:
+    if WorkQueue[level]['run']!="":
+      name=WorkQueue[level]['run']
+      CL=config[name]['CL']
+      for level in levellist:
+        if level in config[name]:
+          if int(config[name]['runtime']) > int(config[name][level]):
+            if int(CLconfig[CL]['CL_Weights']) > int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+              sysconfig['ComityRT']['ExCL']=config[name]['CL']
+      
+      if int(CLconfig[CL]['CL_Weights']) < int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+        msg=FindPid(name)
+        if msg=="true":
+          KillWork(name)
+ 
+  for name in config.sections():
+    if int(config[name]['runtime']) > int(config[name][config[name]['CL']]):
+      msg=FindPid(name)
+      if msg=="true":
+        KillWork(name)
+   
+  
+  #for name in config.sections():
+  #  for level in levellist:
+  #    if level==config[name]['CL']:
+  #      if int(config[name]['runtime']) > int(config[name][level]) and config[name]['CL']!=sysconfig['ComityRT']['maxCL']:
+  #         print(config[name][level])
+  #         msg=FindPid(name)
+  #         if msg=="true":
+  #            KillWork(name)
+
+
+
 def fd():
   for level in WorkQueue:
     priority_mod(config,CTconfig[level]['Container_Priority_Mode'],level)
@@ -811,6 +873,7 @@ def read_config(workloadname):
        config[name]['c']=config[name]['Execution_Time']
        config[name]['d']=config[name]['Deadline_Time']
        config[name]['t']=config[name]['Period_Time']
+       config[name]['CL']=config[name]['Assignment_Level']
        config[name]['runtime']="0"
        config[name]['status']='0'
        config[name]['print']="{0:10}".format(name)
@@ -829,6 +892,12 @@ def read_config(workloadname):
         if config[name]['Assignment_Level']==WorkQueue[Ct]['level']:
            config[name]['level']=Ct
            config[name]['orilevel']=Ct
+        if CTconfig[Ct]['Container_Priority_Mode']=="SMC":
+           sysconfig['ComityRT']['Sched_Algorithm']="SMC"
+           sysconfig['ComityRT']['ExCL']=sysconfig['ComityRT']['Execution_Level_Mode']
+           config[name]['level']=Ct
+           config[name]['orilevel']=Ct
+           WorkQueue[Ct]['level']=Ct
    
     for name in config.sections():
       config[name]['statuspr']=str(workprintline+i+j+1)
@@ -872,6 +941,9 @@ def Check_Work():
 
   AL()
   for name in config.sections():
+      #if sysconfig['ComityRT']['Sched_Algorithm']=="SMC":
+      #  SMC_RunCheck()
+
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
       #   KillWork(name)
         #WorkSort(config)   
@@ -1001,7 +1073,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.addstr(10,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     #stdscr.addstr(11,0,"{0:10}".format("work1")+"↑▄▄▄▄▄▄▄▄▄▄▄▄▄",curses.A_BOLD)
     
-    #stdscr.addstr(8,0,worktime,curses.A_BOLD)
+    #stdscr.addstr(30,0,sysconfig['ComityRT']['ExCL'],curses.A_BOLD)
     stdscr.move(29,0)
     stdscr.clrtoeol()
     #stdscr.move(30,0)
@@ -1010,7 +1082,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #stdscr.clrtoeol()
     #stdscr.move(32,0)
     #stdscr.clrtoeol()
-    stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['priority']+" "+config['work4']['d'],curses.A_BOLD)
+    #stdscr.addstr(29,0,"level "+config['work4']['statusprint']+" "+config['work4']['nextstart']+" status "+config['work4']['status']+" priority "+config['work4']['d']+" "+config['work4']['runtime'],curses.A_BOLD)
     #stdscr.addstr(30,0,"level "+config['work3']['statusprint']+" "+config['work3']['nextstart']+" status "+config['work3']['status']+" priority "+config['work3']['priority'],curses.A_BOLD)
    # 
    # stdscr.addstr(31,0,"level "+config['w1']['statusprint']+" "+config['w1']['nextstart']+" status "+config['w1']['status']+" priority "+config['w1']['priority']+" "+config['w1']['Sub'],curses.A_BOLD)
