@@ -13,30 +13,20 @@ from configobj import ConfigObj
 #config = configparser.ConfigParser()
 
 
-Config_MainList=["Num_Criticality_Level","Sched_Algorithm","Sys_Max_Num_Cores","Sys_Use_Cores","Sys_Preemption","TDF_Filename","Container_Filename","Criticality_Level_Filename","Execution_Level_Mode","Task_Move","Back"]
+Config_MainList=["Num_Cores","Used_Cores","Preemptible","Migratable","Default_Sched","Back"]
 
-Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Container_Priority_Mode","Back"]
+Config_ConList=["COID","Name","Allocated_Core","Core_Utilization","Allocated_Memory","Sched_Algorithm","Back"]
 
 
-Num_Criticality_Level=""
+Num_Cores=""
 
-Sched_Algorithm=""
+Used_Cores=""
 
-Sys_Max_Num_Cores=""
+Preemptible=""
 
-Sys_Use_Cores=""
+Migratable=""
 
-Sys_Preemption=""
-
-TDF_Filename=""
-
-Container_Filename=""
-
-Criticality_Level_Filename=""
-
-Execution_Level_Mode=""
-
-Task_Move=""
+Default_Sched=""
 
 Ciritical_container=[]
 
@@ -57,9 +47,7 @@ def Show_System_Status():
     #config =ConfigObj('./config/'+sname+'.ini')
     config=ConfigObj('./config/System/'+sname+'.ini')
     #config.read('./config/'+sname+'.ini')
-    CTFilename=config['ComityRT']['Container_Filename']
-    CTconfig=ConfigObj('./config/Container/'+CTFilename)
-    Criti_Name = CTconfig.keys()
+    Criti_Name = config['CONTAINERS'].keys()
     sysinfo="" 
     syserror=""
     for cname in Criti_Name:
@@ -233,14 +221,14 @@ def Bulid_system():
       config.write(open('./config/System.ini', "w"))
   
     for i in range(len(Criticality_Name)):
-      Container_Use_Cores=""
-      Container_Cores_Weights=Ciritical_container[i]['Container_Cores_Weights']
-      Container_Memory_Limit=Ciritical_container[i]['Container_Memory_Limit']
-      for j in range(len(Ciritical_container[i]['Container_Use_Cores'])):
-        Container_Use_Cores=Container_Use_Cores+Ciritical_container[i]['Container_Use_Cores'][j]+","
-      Container_Use_Cores=Container_Use_Cores[:-1]  ##['0','1','2']將LIST轉換成字串
-      print(Container_Cores_Weights)
-      CreateCMD(Criticality_Name[i],Container_Use_Cores,Container_Cores_Weights,Container_Memory_Limit)
+      COID=""
+      Name=Ciritical_container[i]['Name']
+      Allocated_Core=Ciritical_container[i]['Allocated_Core']
+      for j in range(len(Ciritical_container[i]['COID'])):
+        COID=COID+Ciritical_container[i]['COID'][j]+","
+      COID=COID[:-1]  ##['0','1','2']將LIST轉換成字串
+      print(Name)
+      CreateCMD(Criticality_Name[i],COID,Name,Allocated_Core)
       progress = ProgressBar().start()
       t1=threading.Thread(target=dosomework,args=(progress,))
       t1.start()
@@ -268,10 +256,8 @@ def Stop2Rm():
      path="./config/System/"+str(cfgN)+".ini"
      #config.read(path)
      config=ConfigObj(path)
-     CTFilename=config['ComityRT']['Container_Filename']
-     CTconfig=ConfigObj('./config/Container/'+CTFilename)
      #AList=config.sections()
-     AList=CTconfig.keys()
+     AList=config['CONTAINERS'].keys()
      print(cfgN+" Start stop and delete....")
      for Lname in AList:
 
@@ -341,15 +327,14 @@ def Load_config():
   
       configpath='./config/System/'+cfgN
       config=ConfigObj(configpath)
-      CTFilename=config['ComityRT']['Container_Filename']
-      CTconfig=ConfigObj('./config/Container/'+CTFilename)
+      
       #config.read(configpath)
       global Criticality_Name
-      global Sys_Use_Cores
-      global Num_Criticality_Level
-      global Sys_Preemption
-      global Sched_Algorithm
-      global Sys_Max_Num_Cores
+      global Migratable
+      global Num_Cores
+      global Default_Sched
+      global Used_Cores
+      global Preemptible
       global TDF_Filename
       global Execution_Level_Mode
       global Task_Move
@@ -358,29 +343,21 @@ def Load_config():
 
       #Criticality_Name = config.get('ComityRT' , 'Criticality_Name').split()
       #Criticality_Name = config.sections()
-      Criticality_Name = CTconfig.keys()
+      Criticality_Name = config['CONTAINERS'].keys()
      
-      #Sys_Use_Cores = config.get('ComityRT' , 'Sys_Use_Cores').split()
+      #Migratable = config.get('ComityRT' , 'Migratable').split()
 
-      Sys_Use_Cores = config['ComityRT']['Sys_Use_Cores']
+      Migratable = config['SYSTEM']['Migratable']
     
-      Num_Criticality_Level=config['ComityRT']['Num_Criticality_Level']
+      Num_Cores=config['SYSTEM']['Num_Cores']
 
-      Sys_Preemption=config['ComityRT']['Sys_Preemption']
+      Default_Sched=config['SYSTEM']['Default_Sched']
 
-      Sched_Algorithm =config['ComityRT']['Sched_Algorithm']
+      Used_Cores =config['SYSTEM']['Used_Cores']
 
-      Sys_Max_Num_Cores=config['ComityRT']['Sys_Max_Num_Cores']
+      Preemptible=config['SYSTEM']['Preemptible']
 
-      Execution_Level_Mode = config['ComityRT']['Execution_Level_Mode']
-
-      Task_Move = config['ComityRT']['Task_Move']
-
-      Container_Filename = config['ComityRT']['Container_Filename']
-      
-      Criticality_Level_Filename = config['ComityRT']['Criticality_Level_Filename']
-      
-      TDF_Filename = config['ComityRT']['TDF_Filename']
+     
   
       
   
@@ -419,17 +396,12 @@ def View_parameters(fname):
   Temp=""
   tb1 = pt.PrettyTable()
   tb1.field_names = ["Parameter",fname]
-  tb1.add_row(["Num_Criticality_Level",Num_Criticality_Level])
-  tb1.add_row(["Sys_Preemption",Sys_Preemption])
+  tb1.add_row(["Num_Cores",Num_Cores])
+  tb1.add_row(["Used_Cores",Used_Cores])
+  tb1.add_row(["Preemptible",Preemptible])
+  tb1.add_row(["Migratable",Migratable])
+  tb1.add_row(["Default_Sched",Default_Sched])
   #tb1.add_row(["Criticality_Name",Criticality_Name])
-  tb1.add_row(["Sched_Algorithm",Sched_Algorithm])
-  tb1.add_row(["Sys_Max_Num_Cores",Sys_Max_Num_Cores])
-  tb1.add_row(["Sys_Use_Cores",Sys_Use_Cores])
-  tb1.add_row(["Execution_Level_Mode",Execution_Level_Mode])
-  tb1.add_row(["Task_Move",Task_Move])
-  tb1.add_row(["Container_Filename",Container_Filename])
-  tb1.add_row(["Criticality_Level_Filename",Criticality_Level_Filename])
-  tb1.add_row(["TDF_Filename",TDF_Filename])
   tb1.align="l"
   print(tb1) 
 
@@ -438,10 +410,12 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
   
   tb1.field_names = ["Container",
-                       "Container_Use_Cores",
-                       "Container_Cores_Weights",
-                       "Container_Memory_Limit",
-                       "Container_Priority_Mode",
+                       "COID",
+                       "Name",
+                       "Allocated_Core",
+                       "Core_Utilization",
+                       "Allocated_Memory",
+                       "Sched_Algorithm",
                      ]
 
   configpath='./config/System/'+fname
