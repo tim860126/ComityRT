@@ -305,7 +305,7 @@ def Choose_config(choices):
   sysconfig =ConfigObj('./config/System/'+answers['action']+'.ini')
   CLconfig = sysconfig['CRITICALITIES']
   CTconfig = sysconfig['CONTAINERS']
-  
+  CLAsgn={} 
   for CLID in sysconfig['CRITICALITIES']:
     CLAsgn[CLID]=dict()
     CLAsgn[CLID]['Designated_Containers']=list()
@@ -338,13 +338,14 @@ def Choose_config(choices):
 
   #取系統執行層級
   sysconfig['CRITICALITIES']['Init_Criticality_Level']=sysconfig['CRITICALITIES']['Init_Criticality_Level'].strip('{').strip('}')
-  sysconfig['SYSTEM']['ExCL']=sysconfig[sysconfig['CRITICALITIES']['Init_Criticality_Level']]['Name']
+  sysconfig['SYSTEM']['ExCL']=sysconfig['CRITICALITIES'][sysconfig['CRITICALITIES']['Init_Criticality_Level']]['Name']
   
   CLconfig.pop('Num_Criticality_Levels')
   CLconfig.pop('Init_Criticality_Level')
   
   #關鍵層級參數重整
   for level in CLconfig:
+    CLconfig[level]['Weight']=str(int(float(CLconfig[level]['Weight'])*10))
     CLconfig[CLconfig[level]['Name']]=CLconfig[level]
     CLconfig[CLconfig[level]['Name']]['Designated_Containers']=list()
     CLconfig[CLconfig[level]['Name']]['Designated_Containers']=CLAsgn[level]['Designated_Containers']
@@ -404,8 +405,8 @@ def SystemTimeStart():
      else:
        timeprint=str(settime)+" sec"
      
-     if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
-       SMC_RunCheck()
+     #if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
+     #  SMC_RunCheck()
  
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
      #Check_Work()
@@ -422,7 +423,7 @@ def SystemTimeStart():
      
      for name in config.keys():
        if config[name]['d']==str(settime):
-         config[name]['d']=str(int(config[name]['nextstart'])+int(config[name]['Deadline_Time']))
+         config[name]['d']=str(int(config[name]['nextstart'])+(int(config[name]['Deadline'][0])//1000))
          msg=FindPid(name)
          if msg=="true":
            KillWork(name)
@@ -432,21 +433,21 @@ def SystemTimeStart():
 
 
  
-     levellist=CLconfig.keys()
-     if sysconfig['SYSTEM']['Task_Move']=="true" and sysconfig['SYSTEM']['Sched_Algorithm']!="SMC":
-       for name in config.keys():
-         for chlevel in levellist:
-           if chlevel in config[name]:
-             if config[name]['runtime']==config[name][chlevel] and WorkQueue[config[name]['level']]['level']!=chlevel:
-               level=config[name]['level']
-               for CT in WorkQueue:
-                 if WorkQueue[CT]['level']==chlevel:
-                   chlevel=CT
-               if config[name]['Sub']=="":
-                 ChangeLevel(name,level,chlevel)
-               else:
-                 SubChangeLevel(name,level,chlevel)
-    
+     #levellist=CLconfig.keys()
+     #if sysconfig['SYSTEM']['Task_Move']=="true" and sysconfig['SYSTEM']['Sched_Algorithm']!="SMC":
+     #  for name in config.keys():
+     #    for chlevel in levellist:
+     #      if chlevel in config[name]:
+     #        if config[name]['runtime']==config[name][chlevel] and WorkQueue[config[name]['level']]['level']!=chlevel:
+     #          level=config[name]['level']
+     #          for CT in WorkQueue:
+     #            if WorkQueue[CT]['level']==chlevel:
+     #              chlevel=CT
+     #          if config[name]['Sub']=="":
+     #            ChangeLevel(name,level,chlevel)
+     #          else:
+     #            SubChangeLevel(name,level,chlevel)
+     # 
      #AL()
      #for name in config.keys():
      #  if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['SYSTEM']['Change_Level_Mode']=="true":
@@ -463,8 +464,8 @@ def SystemTimeStart():
        #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
        #  KillWork(name)
        
-     Check_Work()
-     Schedule()
+     #Check_Work()
+     #Schedule()
      #for name in config.keys():
      #  if sysconfig['SYSTEM']['Preemptible']=="true" or sysconfig['SYSTEM']['Preemptible']=="True":
      #    if WorkQueue[config[name]['level']]['run']!="":
@@ -496,7 +497,7 @@ def TimeStart(name):
    
    #string="{0:10}".format(name)+"↑"
    #time.sleep(1)
-   #string=config[name]['print']
+   #sgring=config[name]['print']
    #time.sleep(1)
    #i=0;
    #j=0; 
@@ -521,8 +522,8 @@ def producer(str123,T,name):
     WorkQueue[config[name]['level']]['status']=1
     #config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
     pname="{0:10}".format(name)
-    C="{0:4}".format(config[name]['C'])
-    T="{0:4}".format(config[name]['T'])
+    C="{0:4}".format(config[name]['c'])
+    T="{0:4}".format(config[name]['t'])
     level="{0:8}".format(config[name]['level'])
     worklog="Run {name} in {level} excution {C} period {T}\n".format(name=pname,level=level,C=C,T=T)
     WriteLog(worklog)
@@ -584,8 +585,8 @@ def Sub_producer(str123,T,name,level):
     #str123.replace(config[name]['level'],level)
     #config[name]['nextstart']=str(int(config[name]['nextstart'])+int(config[name]['t']))
     pname="{0:10}".format(name)
-    C="{0:4}".format(config[name]['C'])
-    T="{0:4}".format(config[name]['T'])
+    C="{0:4}".format(config[name]['c'])
+    T="{0:4}".format(config[name]['t'])
     level2="{0:8}".format(level)
     worklog="Run Sub {name} in {level} excution {C} period {T}\n".format(name=pname,level=level2,C=C,T=T)
     WriteLog(worklog)
@@ -931,7 +932,7 @@ def read_config(workloadname):
     global WorkQueue
     config = sysconfig['TASKS']
     for TID in config:
-      config[CTconfig[TID]['Name']]=CTconfig[TID]
+      config[config[TID]['Name']]=config[TID]
       config.pop(TID)
       
     for name in config.keys():
@@ -953,9 +954,9 @@ def read_config(workloadname):
        except:
          ca=1
        #config[name]['c']=config[name][config[name]['level']]
-       config[name]['c']=config[name]['WCET'][0]
-       config[name]['d']=config[name]['Deadline'][0]
-       config[name]['t']=config[name]['Period']
+       config[name]['c']=str(int(config[name]['WCET'][0])//1000)
+       config[name]['d']=str(int(config[name]['Deadline'][0])//1000)
+       config[name]['t']=str(int(config[name]['Period'][0])//1000)
        config[name]['CL']=config[name]['Criticality_Level']
        config[name]['runtime']="0"
        config[name]['status']='0'
@@ -1024,8 +1025,8 @@ def Check_Work():
 
   AL()
   for name in config.keys():
-      #if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
-      #  SMC_RunCheck()
+      if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
+        SMC_RunCheck()
 
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
       #   KillWork(name)
@@ -1181,6 +1182,8 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #Check_Work()
     #s=0
     #m=0
+    Check_Work()
+    Schedule()
     if settime>60:
       m=settime/60
       s=settime-(60*int(m))
