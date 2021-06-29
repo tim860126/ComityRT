@@ -405,8 +405,8 @@ def SystemTimeStart():
      else:
        timeprint=str(settime)+" sec"
      
-     #if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
-     #  SMC_RunCheck()
+     if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
+       SMC_RunCheck()
  
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
      #Check_Work()
@@ -464,8 +464,8 @@ def SystemTimeStart():
        #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0" and config[name]['status']=="1":
        #  KillWork(name)
        
-     #Check_Work()
-     #Schedule()
+     Check_Work()
+     Schedule()
      #for name in config.keys():
      #  if sysconfig['SYSTEM']['Preemptible']=="true" or sysconfig['SYSTEM']['Preemptible']=="True":
      #    if WorkQueue[config[name]['level']]['run']!="":
@@ -811,7 +811,7 @@ def SMC_RunCheck():
       
    
   for level in WorkQueue:
-    if WorkQueue[level]['run']!="":
+    if WorkQueue[level]['run']!="" and CTconfig[level]['Sched_Algorithm']=="SMC":
       name=WorkQueue[level]['run']
       CL=config[name]['CL']
       for level in levellist:
@@ -879,8 +879,8 @@ def priority_mod(config,Ch,level):
   if Ch=="EDF":
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[i]]['nextstart'])-settime
-        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        aa=int(config[Wtemp[i]]['d'])-settime
+        bb=int(config[Wtemp[j]]['d'])-settime
         if aa > bb :
           temp=Wtemp[i]
           Wtemp[i]=Wtemp[j]
@@ -914,8 +914,8 @@ def priority_method(config,Ch):
     Wtemp=config.keys()
     for i in range(len(Wtemp)):
       for j in range(i):
-        aa=int(config[Wtemp[i]]['nextstart'])-settime
-        bb=int(config[Wtemp[j]]['nextstart'])-settime
+        aa=int(config[Wtemp[i]]['d'])-settime
+        bb=int(config[Wtemp[j]]['d'])-settime
         if aa > bb :
           temp=Wtemp[i]
           Wtemp[i]=Wtemp[j]
@@ -1025,8 +1025,8 @@ def Check_Work():
 
   AL()
   for name in config.keys():
-      if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
-        SMC_RunCheck()
+      #if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
+      #  SMC_RunCheck()
 
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
       #   KillWork(name)
@@ -1182,8 +1182,8 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     #Check_Work()
     #s=0
     #m=0
-    Check_Work()
-    Schedule()
+    #Check_Work()
+    #Schedule()
     if settime>60:
       m=settime/60
       s=settime-(60*int(m))
@@ -1204,11 +1204,12 @@ stdscr = curses.initscr()
 main(stdscr,workloadname)
 #config = configparser.ConfigParser()
 #config.read("./config/Workload/"+workloadname)
-#for name in config.keys():
-#  try:
-#     c=subprocess.check_output(['pidof',name])
-#     c=c.decode('utf-8').split("\n")[0]
-#     if not c is None:
-#       os.system("kill -9 $(pidof "+name+")")
-#  except:
-#     print("Task all Clear")
+
+for name in config.keys():
+  try:
+     c=subprocess.check_output(['pidof',name])
+     c=c.decode('utf-8').split("\n")[0]
+     if not c is None:
+       os.system("kill -9 $(pidof "+name+")")
+  except:
+     print("Task all Clear")
