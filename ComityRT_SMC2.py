@@ -10,7 +10,7 @@ import threading
 import os
 from configobj import ConfigObj
 
-Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Container_Priority_Mode"]
+Config_ConList=["Container_Use_Cores","Container_Cores_Weights","Container_Memory_Limit","Sched_Algorithm"]
 
 workfolder="./work/"
 
@@ -301,24 +301,72 @@ def Choose_config(choices):
   f.write(runingstr)
   f.close()
   #sysconfig.read("./config/"+answers['action']+".ini")
-  #levellist=sysconfig.sections()
+  #levellist=sysconfig.keys()
   sysconfig =ConfigObj('./config/System/'+answers['action']+'.ini')
-  CLconfig =ConfigObj('./config/CL/'+sysconfig['ComityRT']['Criticality_Level_Filename'])
-  CTconfig =ConfigObj('./config/Container/'+sysconfig['ComityRT']['Container_Filename'])
-  #config.read('./config/'+sname+'.ini')
-  levellist = CLconfig.keys()
+  CLconfig = sysconfig['CRITICALITIES']
+  CTconfig = sysconfig['CONTAINERS']
+  
+  for CLID in sysconfig['CRITICALITIES']:
+    CLAsgn[CLID]=dict()
+    CLAsgn[CLID]['Designated_Containers']=list()
+
+  #取關鍵層級指派到哪個容器
+  for asgn in sysconfig['ASSIGNMENTS']:
+    if isinstance(sysconfig['ASSIGNMENTS'][asgn]['Assigned_Tasks'],list)==True:
+      for CLID in sysconfig['ASSIGNMENTS'][asgn]['Assigned_Tasks']:
+        CLID=CLID.strip('{}')
+        #print(CLID)
+        if isinstance(sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers'],list)==True:
+          for asgnin in sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers']:
+            asgnin=asgnin.strip('{}')
+            CLAsgn[CLID]['Designated_Containers'].append(sysconfig['CONTAINERS'][asgnin]['Name'])
+        else:
+          asgnin=sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers']
+          asgnin=asgnin.strip('{}')
+          CLAsgn[CLID]['Designated_Containers'].append(sysconfig['CONTAINERS'][asgnin]['Name'])
+    else:
+      CLID=sysconfig['ASSIGNMENTS'][asgn]['Assigned_Tasks']
+      CLID=CLID.strip("").strip('{').strip('}')
+      if isinstance(sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers'],list)==True:
+        for asgnin in sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers']:
+          asgnin=asgnin.strip('{}')
+          CLAsgn[CLID]['Designated_Containers'].append(sysconfig['CONTAINERS'][asgnin]['Name'])
+      else:
+        asgnin=sysconfig['ASSIGNMENTS'][asgn]['Designated_Containers']
+        asgnin=asgnin.strip('{}')
+        CLAsgn[CLID]['Designated_Containers'].append(sysconfig['CONTAINERS'][asgnin]['Name'])
+
+  #取系統執行層級
+  sysconfig['CRITICALITIES']['Init_Criticality_Level']=sysconfig['CRITICALITIES']['Init_Criticality_Level'].strip('{').strip('}')
+  sysconfig['SYSTEM']['ExCL']=sysconfig[sysconfig['CRITICALITIES']['Init_Criticality_Level']]['Name']
+  
+  CLconfig.pop('Num_Criticality_Levels')
+  CLconfig.pop('Init_Criticality_Level')
+  
+  #關鍵層級參數重整
+  for level in CLconfig:
+    CLconfig[CLconfig[level]['Name']]=CLconfig[level]
+    CLconfig[CLconfig[level]['Name']]['Designated_Containers']=list()
+    CLconfig[CLconfig[level]['Name']]['Designated_Containers']=CLAsgn[level]['Designated_Containers']
+    CLconfig.pop(level)
+   
+  #容器參數重整 
+  for CT in CTconfig:
+    CTconfig[CTconfig[CT]['Name']]=CTconfig[CT]
+    CTconfig.pop(CT)
+    
+  levellist=CLconfig.keys()
+
   #WorkQueue 初始化
   #print(levellist)
-  #print(CLconfig['level1']['CL_Use_Container'][0])
+  #print(CLconfig['level1']['Designated_Containers'][0])
   for level in levellist: 
     Wtemp=list()
-    if isinstance(CLconfig[level]['CL_Use_Container'],list)==True:
-      for a in CLconfig[level]['CL_Use_Container']:
-        Wtemp.append(a)
-      MCT=CLconfig[level]['CL_Use_Container'][0]
+    
+    for a in CLconfig[level]['Designated_Containers']:
+      Wtemp.append(a)
+      MCT=CLconfig[level]['Designated_Containers'][0]
       del Wtemp[0]
-    else:
-      MCT=CLconfig[level]['CL_Use_Container']
     WorkQueue[MCT]=dict()
     WorkQueue[MCT]['status']=0
     WorkQueue[MCT]['level']=level
@@ -331,20 +379,20 @@ def Choose_config(choices):
       SubLevel[SubN]['run']=""
     #print(WorkQueue[MCT]['Sub'])
   print(WorkQueue)
-  return sysconfig['ComityRT']['TDF_Filename']
+  return answers['action']+'.ini'
 
 def SystemTimeStart():
    global settime
    global config
    global sysconfig
    timeprint=""
-   #for name in config.sections():
+   #for name in config.keys():
    #  tp1=threading.Thread(target=TimeStart,args=(name,))
    #  tp1.start()
    while(1):
      time.sleep(1)
      settime=settime+1
-     #if sysconfig['ComityRT']['Scheduleability_analysis']=="EDF":
+     #if sysconfig['SYSTEM']['Scheduleability_analysis']=="EDF":
      #  priority_method(config,"EDF")
        #WorkSort(config)
      s=0
@@ -356,13 +404,13 @@ def SystemTimeStart():
      else:
        timeprint=str(settime)+" sec"
      
-     if sysconfig['ComityRT']['Sched_Algorithm']=="SMC":
+     if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
        SMC_RunCheck()
  
      #stdscr.addstr(6,0,"time:"+str(timeprint),curses.A_BOLD)
      #Check_Work()
      #Schedule()
-     for name in config.sections():
+     for name in config.keys():
        if(config[name]['status']=="0" or config[name]['status']=="-1"):
          config[name]['print']=config[name]['print']+" "
          stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
@@ -372,7 +420,7 @@ def SystemTimeStart():
          config[name]['runtime']=str(int(config[name]['runtime'])+1)
          stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD)
      
-     for name in config.sections():
+     for name in config.keys():
        if config[name]['d']==str(settime):
          config[name]['d']=str(int(config[name]['nextstart'])+int(config[name]['Deadline_Time']))
          msg=FindPid(name)
@@ -385,8 +433,8 @@ def SystemTimeStart():
 
  
      levellist=CLconfig.keys()
-     if sysconfig['ComityRT']['Task_Move']=="true" and sysconfig['ComityRT']['Sched_Algorithm']!="SMC":
-       for name in config.sections():
+     if sysconfig['SYSTEM']['Task_Move']=="true" and sysconfig['SYSTEM']['Sched_Algorithm']!="SMC":
+       for name in config.keys():
          for chlevel in levellist:
            if chlevel in config[name]:
              if config[name]['runtime']==config[name][chlevel] and WorkQueue[config[name]['level']]['level']!=chlevel:
@@ -400,8 +448,8 @@ def SystemTimeStart():
                  SubChangeLevel(name,level,chlevel)
     
      #AL()
-     #for name in config.sections():
-     #  if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['ComityRT']['Change_Level_Mode']=="true":
+     #for name in config.keys():
+     #  if config[name]['runtime']==config[name][config[name]['level']] and sysconfig['SYSTEM']['Change_Level_Mode']=="true":
      #      level=config[name]['level']
      #      pst=levellist.index(config[name]['level'])
      #      if pst+1<=len(levellist)-1:
@@ -417,8 +465,8 @@ def SystemTimeStart():
        
      Check_Work()
      Schedule()
-     #for name in config.sections():
-     #  if sysconfig['ComityRT']['Sys_Preemption']=="true" or sysconfig['ComityRT']['Sys_Preemption']=="True":
+     #for name in config.keys():
+     #  if sysconfig['SYSTEM']['Preemptible']=="true" or sysconfig['SYSTEM']['Preemptible']=="True":
      #    if WorkQueue[config[name]['level']]['run']!="":
      #      if name in WorkQueue[config[name]['level']]['Queue']:
      #        fd()
@@ -584,7 +632,7 @@ def Sub_producer(str123,T,name,level):
 def Schedule():
   global WorkQueue
   for level in WorkQueue:
-    if CTconfig[level]['Container_Priority_Mode']=="CFS":
+    if CTconfig[level]['Sched_Algorithm']=="CFS":
       for i in range(len(WorkQueue[level]['Queue'])):
         wname=WorkQueue[level]['Queue'].pop(0)
         #WorkQueue[level]['print']==WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])
@@ -626,7 +674,7 @@ def Schedule():
 
 def RunWork(stdscr):
   i=0
-  for wkname in config.sections():
+  for wkname in config.keys():
     #string="[process "+str(i+1)+": "+str(wkname)+" computing:%3d"%int(config[wkname]['c'])+" period:%3d"%int(config[wkname]['t'])+" level: "+str(config[wkname]['level'])+"]"
     #stdscr.addstr(int(config[wkname]['workpr'])-5,0,string,curses.A_BOLD)
     try:
@@ -643,7 +691,7 @@ def RunWork(stdscr):
 
 def Start_Work():
   i=0
-  for wkname in config.sections():
+  for wkname in config.keys():
     workstats=str(config[wkname]['level'])+" WCET "+str(config[wkname]['c'])+" "+multifolder+str(config[wkname]['level'])+"/"+str(wkname)
     workperiod=config[wkname]['t']
     #config[wkname]['workpr']=str(pg1+i)
@@ -712,7 +760,7 @@ def WorkSort(config):
 #  if Ch=="RM":
 #    for level in WorkQueue:
 #      Wtemp=[]
-#      for wname in config.sections():
+#      for wname in config.keys():
 #        if config[wname]['level']==level:
 #          Wtemp.append(wname)
 #      for i in range(len(Wtemp)):
@@ -736,12 +784,8 @@ def SMC_RunCheck():
   
   levellist=list()
   for level in CLlist:
-    CtN=""
-    if isinstance(CLconfig[level]['CL_Use_Container'],list)==True:
-      CtN=CLconfig[level]['CL_Use_Container'][0]
-    else:
-      CtN=CLconfig[level]['CL_Use_Container']
-    if CTconfig[CtN]['Container_Priority_Mode']=="SMC":
+    CtN=CLconfig[level]['Designated_Containers'][0]
+    if CTconfig[CtN]['Sched_Algorithm']=="SMC":
       levellist.append(level)
 
   #print(str(levellist))  
@@ -749,19 +793,19 @@ def SMC_RunCheck():
   #maxC=0
   #maxCL=""
   #for level in levellist:
-  #  if int(CLconfig[level]['CL_Weights']) > maxC:
-  #    maxC=int(CLconfig[level]['CL_Weights'])
+  #  if int(CLconfig[level]['Weight']) > maxC:
+  #    maxC=int(CLconfig[level]['Weight'])
   #    maxCL=level
-  #sysconfig['ComityRT']['maxCL']=maxCL
-  #for name in config.sections():
+  #sysconfig['SYSTEM']['maxCL']=maxCL
+  #for name in config.keys():
   #  for level in levellist:
   #    if int(config[name]['runtime']) > int(config[name][level]):
-  #      if int(CLconfig[config[name]['CL']]['CL_Weights']) > int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
-  #        sysconfig['ComityRT']['ExCL']=config[name]['CL']
+  #      if int(CLconfig[config[name]['CL']]['Weight']) > int(CLconfig[sysconfig['SYSTEM']['ExCL']]['Weight']):
+  #        sysconfig['SYSTEM']['ExCL']=config[name]['CL']
   #for level in WorkQueue:
     #for name in WorkQueue[level]['Queue']:
       #CL=config[name]['CL']
-      #if int(CLconfig[CL]['CL_Weights']) < int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+      #if int(CLconfig[CL]['Weight']) < int(CLconfig[sysconfig['SYSTEM']['ExCL']]['Weight']):
         #WorkQueue[level]['Queue'].remove(name)
       
    
@@ -772,26 +816,26 @@ def SMC_RunCheck():
       for level in levellist:
         if level in config[name]:
           if int(config[name]['runtime']) > int(config[name][level]):
-            if int(CLconfig[CL]['CL_Weights']) > int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
-              sysconfig['ComityRT']['ExCL']=config[name]['CL']
+            if int(CLconfig[CL]['Weight']) > int(CLconfig[sysconfig['SYSTEM']['ExCL']]['Weight']):
+              sysconfig['SYSTEM']['ExCL']=config[name]['CL']
       
-      if int(CLconfig[CL]['CL_Weights']) < int(CLconfig[sysconfig['ComityRT']['ExCL']]['CL_Weights']):
+      if int(CLconfig[CL]['Weight']) < int(CLconfig[sysconfig['SYSTEM']['ExCL']]['Weight']):
         msg=FindPid(name)
         if msg=="true":
           KillWork(name)
  
-  for name in config.sections():
-    if CTconfig[config[name]['level']]['Container_Priority_Mode']=="SMC":
+  for name in config.keys():
+    if CTconfig[config[name]['level']]['Sched_Algorithm']=="SMC":
       if int(config[name]['runtime']) > int(config[name][config[name]['CL']]):
         msg=FindPid(name)
         if msg=="true":
           KillWork(name)
    
   
-  #for name in config.sections():
+  #for name in config.keys():
   #  for level in levellist:
   #    if level==config[name]['CL']:
-  #      if int(config[name]['runtime']) > int(config[name][level]) and config[name]['CL']!=sysconfig['ComityRT']['maxCL']:
+  #      if int(config[name]['runtime']) > int(config[name][level]) and config[name]['CL']!=sysconfig['SYSTEM']['maxCL']:
   #         print(config[name][level])
   #         msg=FindPid(name)
   #         if msg=="true":
@@ -801,7 +845,7 @@ def SMC_RunCheck():
 
 def fd():
   for level in WorkQueue:
-    priority_mod(config,CTconfig[level]['Container_Priority_Mode'],level)
+    priority_mod(config,CTconfig[level]['Sched_Algorithm'],level)
     for i in range(len(WorkQueue[level]['Queue'])):
       for j in range(i):
         aa=int(config[WorkQueue[level]['Queue'][j]]['priority'])
@@ -848,7 +892,7 @@ def priority_mod(config,Ch,level):
 def priority_method(config,Ch):
   global settime
   if Ch=="RM":
-    Wtemp=config.sections()
+    Wtemp=config.keys()
     for i in range(len(Wtemp)):
       for j in range(i):
         aa=int(config[Wtemp[j]]['t'])
@@ -866,7 +910,7 @@ def priority_method(config,Ch):
       #  print(wname+":"+config[wname]['priority'])
   
   if Ch=="EDF":
-    Wtemp=config.sections()
+    Wtemp=config.keys()
     for i in range(len(Wtemp)):
       for j in range(i):
         aa=int(config[Wtemp[i]]['nextstart'])-settime
@@ -885,10 +929,22 @@ def priority_method(config,Ch):
 def read_config(workloadname):
     global config
     global WorkQueue
-    config = configparser.ConfigParser()
-    config.read("./config/Workload/"+workloadname)
+    config = sysconfig['TASKS']
+    for TID in config:
+      config[CTconfig[TID]['Name']]=CTconfig[TID]
+      config.pop(TID)
+      
+    for name in config.keys():
+      for i in range(len(config[name]['Period'])):
+        config[name]['Period'][i]=config[name]['Period'][i].strip('<').strip('>').strip(' ')
+      for i in range(len(config[name]['WCET'])):
+        config[name]['WCET'][i]=config[name]['WCET'][i].strip('<').strip('>').strip(' ')
+      for i in range(len(config[name]['Deadline'])):
+        config[name]['Deadline'][i]=config[name]['Deadline'][i].strip('<').strip('>').strip(' ')        
+     
+
     i=0  
-    for name in config.sections():
+    for name in config.keys():
        try:
          c=subprocess.check_output(['pidof',name])
          c=c.decode('utf-8').split("\n")[0]
@@ -897,16 +953,16 @@ def read_config(workloadname):
        except:
          ca=1
        #config[name]['c']=config[name][config[name]['level']]
-       config[name]['c']=config[name]['Execution_Time']
-       config[name]['d']=config[name]['Deadline_Time']
-       config[name]['t']=config[name]['Period_Time']
-       config[name]['CL']=config[name]['Assignment_Level']
+       config[name]['c']=config[name]['WCET'][0]
+       config[name]['d']=config[name]['Deadline'][0]
+       config[name]['t']=config[name]['Period']
+       config[name]['CL']=config[name]['Criticality_Level']
        config[name]['runtime']="0"
        config[name]['status']='0'
        config[name]['print']="{0:30}".format(name)
        config[name]['statusprint']=name
        config[name]['workpr']=str(workprintline+i)
-       config[name]['nextstart']=str(config[name]['Arrival_Time'])
+       config[name]['nextstart']=str(config[name]['Arrival'])
        config[name]['priority']="0"
        config[name]['Sub']=""
        config[name]['Kill']=""
@@ -914,20 +970,19 @@ def read_config(workloadname):
        i=i+1    
     j=0
 
-    for name in config.sections():
+    for name in config.keys():
       #print(config[name])
       for Ct in WorkQueue:
-        if config[name]['Assignment_Level']==WorkQueue[Ct]['level']:
+        if config[name]['Criticality_Level']==WorkQueue[Ct]['level']:
            config[name]['level']=Ct
            config[name]['orilevel']=Ct
-        if CTconfig[Ct]['Container_Priority_Mode']=="SMC":
-           sysconfig['ComityRT']['Sched_Algorithm']="SMC"
-           sysconfig['ComityRT']['ExCL']=sysconfig['ComityRT']['Execution_Level_Mode']
+        if CTconfig[Ct]['Sched_Algorithm']=="SMC":
+           sysconfig['SYSTEM']['Sched_Algorithm']="SMC"
            config[name]['level']=Ct
            config[name]['orilevel']=Ct
            WorkQueue[Ct]['level']=Ct
       #print(name+" "+config[name]['level']) 
-    for name in config.sections():
+    for name in config.keys():
       config[name]['statuspr']=str(workprintline+i+j+1)
       if config[name]['nextstart']=="0":
         WorkQueue[config[name]['level']]['Queue'].append(name)
@@ -941,7 +996,7 @@ def read_config(workloadname):
       WorkQueue[level]['print']=WorkQueue[level]['level']+":"+str(WorkQueue[level]['Queue'])
       WorkQueue[level]['run']="" 
       k=k+1
-      #print(level+" "+CTconfig[level]['Container_Priority_Mode'])
+      #print(level+" "+CTconfig[level]['Sched_Algorithm'])
       #print(str(WorkQueue[level]['Queue'])) 
     #print(config[name]) 
     priority_method(config,"RM")
@@ -957,7 +1012,7 @@ def get_io():
     cpu_info=psutil.cpu_percent(interval=1,percpu=True)
 
 def Schedule_Analytics():
-  for name in config.sections():
+  for name in config.keys():
     print("h") 
 
 
@@ -968,8 +1023,8 @@ def Check_Work():
   global sysconfig
 
   AL()
-  for name in config.sections():
-      #if sysconfig['ComityRT']['Sched_Algorithm']=="SMC":
+  for name in config.keys():
+      #if sysconfig['SYSTEM']['Sched_Algorithm']=="SMC":
       #  SMC_RunCheck()
 
       #if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
@@ -978,7 +1033,7 @@ def Check_Work():
       if config[name]['nextstart']==str(settime) and config[name]['nextstart']!="0":
         #WorkQueue[config[name]['level']]['Queue'].append(name)
         fd()
-        #if sysconfig['ComityRT']['Scheduleability_analysis']=="EDF":
+        #if sysconfig['SYSTEM']['Scheduleability_analysis']=="EDF":
           #priority_method(config,"EDF")
         
         if len(WorkQueue[config[name]['level']]['Queue'])>0: #加入的工作優先權向前排
@@ -1023,7 +1078,7 @@ def Check_Work():
         #stdscr.move(int(config[name]['statuspr']),0)
         #stdscr.clrtoeol()
         #stdscr.addstr(int(config[name]['statuspr']),0,workstats,curses.A_BOLD)
-      if sysconfig['ComityRT']['Sys_Preemption']=="true" or sysconfig['ComityRT']['Sys_Preemption']=="True":
+      if sysconfig['SYSTEM']['Preemptible']=="true" or sysconfig['SYSTEM']['Preemptible']=="True":
         if WorkQueue[config[name]['level']]['run']!="":
           if name in WorkQueue[config[name]['level']]['Queue']:       
             fd()
@@ -1061,7 +1116,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
   #time.sleep(5)
   #Start_Work()
   #stdscr.addstr(18,0,"abc",curses.A_BOLD)
-  for name in config.sections():
+  for name in config.keys():
     workstats=str(config[name]['level'])+" WCET "+str(config[name]['c'])+" "+multifolder+str(config[name]['level'])+"/"+str(name)
     stdscr.move(int(config[name]['statuspr']),0)
     stdscr.clrtoeol()
@@ -1077,7 +1132,7 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
     if int(settime%20)==0 or settime==0:
       p=settime/20
       gg=""
-      for name in config.sections():
+      for name in config.keys():
         config[name]['print']="{0:20}".format(name)
         stdscr.move(int(config[name]['workpr']),0)
         stdscr.clrtoeol()
@@ -1144,13 +1199,13 @@ choice=cfg.sections()
 workloadname=Choose_config(choice)
 stdscr = curses.initscr()
 main(stdscr,workloadname)
-config = configparser.ConfigParser()
-config.read("./config/Workload/"+workloadname)
-for name in config.sections():
-  try:
-     c=subprocess.check_output(['pidof',name])
-     c=c.decode('utf-8').split("\n")[0]
-     if not c is None:
-       os.system("kill -9 $(pidof "+name+")")
-  except:
-     print("Task all Clear")
+#config = configparser.ConfigParser()
+#config.read("./config/Workload/"+workloadname)
+#for name in config.keys():
+#  try:
+#     c=subprocess.check_output(['pidof',name])
+#     c=c.decode('utf-8').split("\n")[0]
+#     if not c is None:
+#       os.system("kill -9 $(pidof "+name+")")
+#  except:
+#     print("Task all Clear")
