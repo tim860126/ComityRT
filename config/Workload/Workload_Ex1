@@ -1,32 +1,31 @@
-[work2]
+[Task1]
 Arrival_Time=0
-Execution_Time=10
+Execution_Time=30
 Period_Time=60
 Deadline_Time=50
 Assignment_Level=level1
-level1=10
 level2=10
-level3=10
+level3=30
 
-[work3]
+[Task2]
 Arrival_Time=0
 Execution_Time=15
 Period_Time=30
 Deadline_Time=20
-Assignment_Level=level2
-level1=5
-level2=10
-level3=10
+Assignment_Level=level1
+#level1=5
+#level2=10
+#level3=10
 
-[work4]
+[Task3]
 Arrival_Time=0
 Execution_Time=25
 Period_Time=40
 Deadline_Time=35
-Assignment_Level=level3
-level1=10
-level2=15
-level3=25
+Assignment_Level=level2
+#level1=10
+#level2=15
+#level3=25
 
 
 #[w1]

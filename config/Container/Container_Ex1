@@ -1,4 +1,4 @@
-[C1_1]
+[Con1]
 Container_Use_Cores=0
 
 Container_Cores_Weights=1
@@ -7,7 +7,7 @@ Container_Memory_Limit=500
 
 Container_Priority_Mode=RM
 
-[C1_2]
+[Con2]
 Container_Use_Cores=1
 
 Container_Cores_Weights=0.5
@@ -16,7 +16,7 @@ Container_Memory_Limit=500
 
 Container_Priority_Mode=RM
 
-[C2_1]
+[Con3]
 Container_Use_Cores=1
 
 Container_Cores_Weights=0.5

@@ -903,7 +903,7 @@ def read_config(workloadname):
        config[name]['CL']=config[name]['Assignment_Level']
        config[name]['runtime']="0"
        config[name]['status']='0'
-       config[name]['print']="{0:10}".format(name)
+       config[name]['print']="{0:30}".format(name)
        config[name]['statusprint']=name
        config[name]['workpr']=str(workprintline+i)
        config[name]['nextstart']=str(config[name]['Arrival_Time'])
@@ -1078,13 +1078,13 @@ def main(stdscr,workloadname):# Create a string of text based on the Figlet font
       p=settime/20
       gg=""
       for name in config.sections():
-        config[name]['print']="{0:10}".format(name)
+        config[name]['print']="{0:20}".format(name)
         stdscr.move(int(config[name]['workpr']),0)
         stdscr.clrtoeol()
         stdscr.addstr(int(config[name]['workpr']),0,config[name]['print'],curses.A_BOLD) 
       for i in range(int(p)*20,20*(int(p)+1)+1,5):
         gg=gg+str(i)+"   "
-      worktime="{0:10}".format("time")+gg
+      worktime="{0:20}".format("time")+gg
     stdscr.addstr(8,0,worktime,curses.A_BOLD)
 
     for level in WorkQueue:

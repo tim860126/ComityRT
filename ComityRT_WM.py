@@ -17,6 +17,9 @@ Config_MainList=["Num_Cores","Used_Cores","Preemptible","Migratable","Default_Sc
 
 Config_ConList=["COID","Name","Allocated_Core","Core_Utilization","Allocated_Memory","Sched_Algorithm","Back"]
 
+CRITICALITIES_List=["CLID","Name","Weight"]
+
+ASSIGNMENTS_List=["Assigned_Tasks","Designated_Containers"]
 
 Num_Cores=""
 
@@ -50,7 +53,8 @@ def Show_System_Status():
     Criti_Name = config['CONTAINERS'].keys()
     sysinfo="" 
     syserror=""
-    for cname in Criti_Name:
+    for listname in Criti_Name:
+      cname=config['CONTAINERS'][listname]['Name']
       SubL=[]
       Del=[]
       status=subprocess.check_output(["sh","CheckDocker.sh",cname])   
@@ -221,14 +225,14 @@ def Bulid_system():
       config.write(open('./config/System.ini', "w"))
   
     for i in range(len(Criticality_Name)):
-      COID=""
-      Name=Ciritical_container[i]['Name']
-      Allocated_Core=Ciritical_container[i]['Allocated_Core']
-      for j in range(len(Ciritical_container[i]['COID'])):
-        COID=COID+Ciritical_container[i]['COID'][j]+","
-      COID=COID[:-1]  ##['0','1','2']將LIST轉換成字串
-      print(Name)
-      CreateCMD(Criticality_Name[i],COID,Name,Allocated_Core)
+      Allocated_Core=""
+      Core_Utilization=Ciritical_container[i]['Core_Utilization']
+      Allocated_Memory=Ciritical_container[i]['Allocated_Memory']
+      for j in range(len(Ciritical_container[i]['Allocated_Core'])):
+        Allocated_Core=Allocated_Core+Ciritical_container[i]['Allocated_Core'][j]+","
+      Allocated_Core=Allocated_Core[:-1]  ##['0','1','2']將LIST轉換成字串
+      print(Core_Utilization)
+      CreateCMD(Criticality_Name[i],Allocated_Core,Core_Utilization,Allocated_Memory)
       progress = ProgressBar().start()
       t1=threading.Thread(target=dosomework,args=(progress,))
       t1.start()
@@ -236,7 +240,7 @@ def Bulid_system():
       print("\n")
       print(Criticality_Name[i]+" Complete the build!")
 
-  os.system("python ComityRT_M.py")
+  os.system("python ComityRT_WM.py")
   
 def Stop2Rm():
   #config = configparser.ConfigParser()
@@ -256,8 +260,10 @@ def Stop2Rm():
      path="./config/System/"+str(cfgN)+".ini"
      #config.read(path)
      config=ConfigObj(path)
+     AList=list()
      #AList=config.sections()
-     AList=config['CONTAINERS'].keys()
+     for listname in config['CONTAINERS']:
+       AList.append(config['CONTAINERS'][listname]['Name'])
      print(cfgN+" Start stop and delete....")
      for Lname in AList:
 
@@ -335,15 +341,12 @@ def Load_config():
       global Default_Sched
       global Used_Cores
       global Preemptible
-      global TDF_Filename
-      global Execution_Level_Mode
-      global Task_Move
-      global Container_Filename
-      global Criticality_Level_Filename
 
       #Criticality_Name = config.get('ComityRT' , 'Criticality_Name').split()
       #Criticality_Name = config.sections()
-      Criticality_Name = config['CONTAINERS'].keys()
+      Criticality_Name=list()
+      for listname in config['CONTAINERS'].keys(): 
+        Criticality_Name.append(config['CONTAINERS'][listname]['Name'])
      
       #Migratable = config.get('ComityRT' , 'Migratable').split()
 
@@ -365,9 +368,9 @@ def Load_config():
 
       #讀取關鍵層級容器的參數
       Level=[]
-      for i in Criticality_Name:
+      for i in config['CONTAINERS']:
         #Level=config[str(i)]
-        Ciritical_container.append(CTconfig[str(i)])
+        Ciritical_container.append(config['CONTAINERS'][str(i)])
         #print(config[str(i)][str(j)])
   
       View_parameters(fname)
@@ -393,17 +396,7 @@ def ComityRT_Status():
 
 def View_parameters(fname):
   os.system("clear")
-  Temp=""
-  tb1 = pt.PrettyTable()
-  tb1.field_names = ["Parameter",fname]
-  tb1.add_row(["Num_Cores",Num_Cores])
-  tb1.add_row(["Used_Cores",Used_Cores])
-  tb1.add_row(["Preemptible",Preemptible])
-  tb1.add_row(["Migratable",Migratable])
-  tb1.add_row(["Default_Sched",Default_Sched])
-  #tb1.add_row(["Criticality_Name",Criticality_Name])
-  tb1.align="l"
-  print(tb1) 
+  print('\n====================================================================================================\n')
 
   Temp=copy.deepcopy(Config_ConList)
   Temp.pop()
@@ -427,11 +420,57 @@ def View_parameters(fname):
     for j in Temp:
       Temp2.append(Ciritical_container[i][j])  
     tb1.add_row(Temp2)
-    
-          
+  
+  print(tb1)
+  
+
+  tb1 = pt.PrettyTable()
+
+  tb1.field_names = ["CRITICALITIES",
+                       "CLID",
+                       "Name",
+                       "Weight",
+                     ]        
+  Temp=config['CRITICALITIES'].keys()
+  Temp.remove("Num_Criticality_Levels")
+  Temp.remove("Init_Criticality_Level")
+  
+  for name in Temp:
+    Temp2=[]
+    Temp2.append(config['CRITICALITIES'][name]['Name'])
+    for j in CRITICALITIES_List:
+      Temp2.append(config['CRITICALITIES'][name][j])
+    tb1.add_row(Temp2)
     
   print(tb1) 
  
+  tb1 = pt.PrettyTable()
+
+  tb1.field_names = ["ASGN+",
+                     "Assigned_Tasks",
+                     "Designated_Containers",
+                     ]
+
+  for i in config['ASSIGNMENTS'].keys():
+    Temp2=[]
+    Temp2.append(i)  
+    for j in ASSIGNMENTS_List:
+      Temp2.append(config['ASSIGNMENTS'][i][j])
+    tb1.add_row(Temp2)
+  
+  print(tb1)
+  
+  Temp=""
+  tb1 = pt.PrettyTable()
+  tb1.field_names = ["System",fname]
+  tb1.add_row(["Num_Cores",Num_Cores])
+  tb1.add_row(["Used_Cores",Used_Cores])
+  tb1.add_row(["Preemptible",Preemptible])
+  tb1.add_row(["Migratable",Migratable])
+  tb1.add_row(["Default_Sched",Default_Sched])
+  #tb1.add_row(["Criticality_Name",Criticality_Name])
+  tb1.align="l"
+  print(tb1)
   #for i in range(len(Criticality_Name)):
   #  print('╔════════════╗')
   #  print('║{0:12}║'.format(str(Criticality_Name[i]).center(12)))
@@ -440,7 +479,7 @@ def View_parameters(fname):
   #    print('\n'+str(j)+' ='+Ciritical_container[i][j])
   #  print('\n')
 
-  print('\n===============================================\n')
+  print('\n====================================================================================================\n')
 
 Show_Welcom()
 
