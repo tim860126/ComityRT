@@ -15,9 +15,9 @@ from configobj import ConfigObj
 
 Config_MainList=["Num_Cores","Used_Cores","Preemptible","Migratable","Default_Sched","Back"]
 
-Config_ConList=["COID","Name","Allocated_Core","Core_Utilization","Allocated_Memory","Sched_Algorithm","Back"]
+Config_ConList=["Name","Allocated_Core","Core_Utilization","Allocated_Memory","Sched_Algorithm","Back"]
 
-CRITICALITIES_List=["CLID","Name","Weight"]
+CRITICALITIES_List=["Name","Weight"]
 
 ASSIGNMENTS_List=["Assigned_Tasks","Designated_Containers"]
 
@@ -403,7 +403,6 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
   
   tb1.field_names = ["Container",
-                       "COID",
                        "Name",
                        "Allocated_Core",
                        "Core_Utilization",
@@ -413,12 +412,13 @@ def View_parameters(fname):
 
   configpath='./config/System/'+fname
   config=ConfigObj(configpath)
-
-  for i in range(len(Criticality_Name)):
+  
+  Con=config['CONTAINERS'].keys()
+  for name in Con:
     Temp2=[]
-    Temp2.append(Criticality_Name[i])
+    Temp2.append(name)
     for j in Temp:
-      Temp2.append(Ciritical_container[i][j])  
+      Temp2.append(config['CONTAINERS'][name][j])  
     tb1.add_row(Temp2)
   
   print(tb1)
@@ -427,7 +427,6 @@ def View_parameters(fname):
   tb1 = pt.PrettyTable()
 
   tb1.field_names = ["CRITICALITIES",
-                       "CLID",
                        "Name",
                        "Weight",
                      ]        
@@ -437,7 +436,7 @@ def View_parameters(fname):
   
   for name in Temp:
     Temp2=[]
-    Temp2.append(config['CRITICALITIES'][name]['Name'])
+    Temp2.append(name)
     for j in CRITICALITIES_List:
       Temp2.append(config['CRITICALITIES'][name][j])
     tb1.add_row(Temp2)
